@@ -109,6 +109,8 @@ create table if not exists public.problems (
   common_mistakes text default '',
   edge_cases text default '',
   additional_notes text default '',
+  personal_notes text default '',
+  tags text[] default '{}',
   confidence_rating int default 3 check (confidence_rating between 1 and 5),
   is_bookmarked boolean default false,
   is_learned boolean default false,
@@ -206,6 +208,8 @@ alter table public.activity_events enable row level security;
 -- PROFILES RLS
 create policy "Users can view own profile" on public.profiles
   for select using (auth.uid() = id);
+create policy "Users can insert own profile" on public.profiles
+  for insert with check (auth.uid() = id);
 create policy "Users can update own profile" on public.profiles
   for update using (auth.uid() = id);
 
@@ -270,6 +274,8 @@ create policy "Users can view own review history" on public.problem_review_histo
   for select using (auth.uid() = user_id);
 create policy "Users can insert own review history" on public.problem_review_history
   for insert with check (auth.uid() = user_id);
+create policy "Users can delete own review history" on public.problem_review_history
+  for delete using (auth.uid() = user_id);
 
 -- BOOKMARKS RLS
 create policy "Users can view own bookmarks" on public.bookmarks
@@ -403,4 +409,3 @@ begin
   ) returning id into dp_pattern_id;
 end;
 $$ language plpgsql security definer;
-

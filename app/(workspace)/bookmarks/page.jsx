@@ -34,7 +34,11 @@ export default function BookmarksPage() {
     setBookmarkedProblems((prev) => prev.filter((p) => p.id !== id));
     try {
       const supabase = createClient();
+      const { data: { user } } = await supabase.auth.getUser();
       await supabase.from('problems').update({ is_bookmarked: false }).eq('id', id);
+      if (user) {
+        await supabase.from('bookmarks').delete().match({ user_id: user.id, problem_id: id });
+      }
     } catch (err) {
       console.error('Failed to remove bookmark:', err);
     }

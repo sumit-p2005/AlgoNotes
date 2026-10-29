@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import Link from 'next/link';
 import {
   Brain,
@@ -17,28 +17,32 @@ import {
 import { Button } from '@/components/ui/Button';
 import { DifficultyBadge } from '@/components/ui/Badge';
 import { CodeEditor } from '@/components/editor/CodeEditor';
-import { MarkdownRenderer } from '@/components/editor/MarkdownRenderer';
 import { calculateNextReview, RECALL_RATINGS } from '@/lib/revision/scheduler';
 import { createClient } from '@/lib/supabase/client';
 
 export function ActiveRecallSession({ problem, onCompleteReview, onClose }) {
-  // Step in active recall flow:
-  // 1: 'prompt' -> Problem statement shown, user attempts to recall pattern & intuition
-  // 2: 'code_practice' -> (Optional) User attempts code reconstruction
-  // 3: 'reveal' -> User reveals solution, approach, and hints
-  // 4: 'rating' -> User rates recall (Forgot, Difficult, Good, Easy)
   const [step, setStep] = useState(1);
   const [userRecalledPattern, setUserRecalledPattern] = useState('');
   const [userRecalledIdea, setUserRecalledIdea] = useState('');
   const [codeAttempt, setCodeAttempt] = useState('// Reconstruct your solution from memory\n\n');
   const [showHints, setShowHints] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const isSubmittingRef = useRef(false);
 
   const handleRate = async (rating) => {
+    // 1. Client-side duplicate submission lock
+    if (isSubmittingRef.current || submitting) return;
+    isSubmittingRef.current = true;
     setSubmitting(true);
+
     try {
       const supabase = createClient();
       const { data: { user } } = await supabase.auth.getUser();
+
+      if (!user) {
+        alert('Please sign in to record reviews.');
+        return;
+      }
 
       const currentStage = problem.schedule?.stage || 0;
       const reviewResult = calculateNextReview({
@@ -47,31 +51,44 @@ export function ActiveRecallSession({ problem, onCompleteReview, onClose }) {
         nowDate: new Date(),
       });
 
-      // 1. Update or create problem_review_schedules
-      await supabase.from('problem_review_schedules').upsert({
-        problem_id: problem.id,
-        user_id: user.id,
-        stage: reviewResult.nextStage,
-        last_reviewed_at: new Date().toISOString(),
-        next_review_at: reviewResult.nextReviewAt.toISOString(),
-        review_count: (problem.schedule?.review_count || 0) + 1,
-        last_rating: rating,
-      });
+      // 2. Update or upsert review schedule with explicit conflict target
+      await supabase.from('problem_review_schedules').upsert(
+        {
+          problem_id: problem.id,
+          user_id: user.id,
+          stage: reviewResult.nextStage,
+          last_reviewed_at: new Date().toISOString(),
+          next_review_at: reviewResult.nextReviewAt.toISOString(),
+          review_count: (problem.schedule?.review_count || 0) + 1,
+          last_rating: rating,
+          updated_at: new Date().toISOString(),
+        },
+        { onConflict: 'problem_id' }
+      );
 
-      // 2. Insert into problem_review_history
-      await supabase.from('problem_review_history').insert({
-        problem_id: problem.id,
-        user_id: user.id,
-        rating,
-        stage_before: currentStage,
-        stage_after: reviewResult.nextStage,
-        recalled_pattern: userRecalledPattern,
-        recalled_idea: userRecalledIdea,
-        code_attempt: codeAttempt,
-        reviewed_at: new Date().toISOString(),
-      });
+      // 3. Prevent duplicate history record if double-invoked within 5s
+      const fiveSecondsAgo = new Date(Date.now() - 5000).toISOString();
+      const { data: recentReview } = await supabase
+        .from('problem_review_history')
+        .select('id')
+        .eq('problem_id', problem.id)
+        .gte('reviewed_at', fiveSecondsAgo);
 
-      // 3. Log activity event
+      if (!recentReview || recentReview.length === 0) {
+        await supabase.from('problem_review_history').insert({
+          problem_id: problem.id,
+          user_id: user.id,
+          rating,
+          stage_before: currentStage,
+          stage_after: reviewResult.nextStage,
+          recalled_pattern: userRecalledPattern,
+          recalled_idea: userRecalledIdea,
+          code_attempt: codeAttempt,
+          reviewed_at: new Date().toISOString(),
+        });
+      }
+
+      // 4. Log activity event
       await supabase.from('activity_events').insert({
         user_id: user.id,
         event_type: 'review_completed',
@@ -87,12 +104,14 @@ export function ActiveRecallSession({ problem, onCompleteReview, onClose }) {
     } catch (err) {
       console.error('Failed to submit review:', err);
       alert('Error recording review. Please try again.');
+    } finally {
+      isSubmittingRef.current = false;
       setSubmitting(false);
     }
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm animate-in fade-in">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-sm animate-in fade-in">
       <div className="w-full max-w-3xl max-h-[90vh] flex flex-col rounded-2xl border border-border bg-panel shadow-2xl overflow-hidden">
         {/* Session Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-border bg-elevated/50">
@@ -131,7 +150,7 @@ export function ActiveRecallSession({ problem, onCompleteReview, onClose }) {
               Problem Requirement / Personal Summary
             </h3>
             <p className="text-sm text-foreground leading-relaxed whitespace-pre-wrap">
-              {problem.summary || 'No summary entered yet. Recall the problem constraints and target goal.'}
+              {problem.summary || 'Recall the problem constraints and target goal.'}
             </p>
           </div>
 
@@ -273,7 +292,7 @@ export function ActiveRecallSession({ problem, onCompleteReview, onClose }) {
                     type="button"
                     disabled={submitting}
                     onClick={() => handleRate(RECALL_RATINGS.FORGOT)}
-                    className="p-3 rounded-xl border border-red-500/30 bg-red-500/10 hover:bg-red-500/20 text-red-500 transition-colors text-center"
+                    className="p-3 rounded-xl border border-red-500/30 bg-red-500/10 hover:bg-red-500/20 text-red-500 transition-colors text-center cursor-pointer"
                   >
                     <span className="block font-bold text-sm">Forgot</span>
                     <span className="block text-[11px] opacity-80 mt-0.5">Review in 1 day</span>
@@ -284,7 +303,7 @@ export function ActiveRecallSession({ problem, onCompleteReview, onClose }) {
                     type="button"
                     disabled={submitting}
                     onClick={() => handleRate(RECALL_RATINGS.DIFFICULT)}
-                    className="p-3 rounded-xl border border-amber-500/30 bg-amber-500/10 hover:bg-amber-500/20 text-amber-500 transition-colors text-center"
+                    className="p-3 rounded-xl border border-amber-500/30 bg-amber-500/10 hover:bg-amber-500/20 text-amber-500 transition-colors text-center cursor-pointer"
                   >
                     <span className="block font-bold text-sm">Difficult</span>
                     <span className="block text-[11px] opacity-80 mt-0.5">Review in 3 days</span>
@@ -295,7 +314,7 @@ export function ActiveRecallSession({ problem, onCompleteReview, onClose }) {
                     type="button"
                     disabled={submitting}
                     onClick={() => handleRate(RECALL_RATINGS.GOOD)}
-                    className="p-3 rounded-xl border border-emerald-500/30 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-500 transition-colors text-center"
+                    className="p-3 rounded-xl border border-emerald-500/30 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-500 transition-colors text-center cursor-pointer"
                   >
                     <span className="block font-bold text-sm">Good</span>
                     <span className="block text-[11px] opacity-80 mt-0.5">Next interval</span>
@@ -306,7 +325,7 @@ export function ActiveRecallSession({ problem, onCompleteReview, onClose }) {
                     type="button"
                     disabled={submitting}
                     onClick={() => handleRate(RECALL_RATINGS.EASY)}
-                    className="p-3 rounded-xl border border-blue-500/30 bg-blue-500/10 hover:bg-blue-500/20 text-blue-500 transition-colors text-center"
+                    className="p-3 rounded-xl border border-blue-500/30 bg-blue-500/10 hover:bg-blue-500/20 text-blue-500 transition-colors text-center cursor-pointer"
                   >
                     <span className="block font-bold text-sm">Easy</span>
                     <span className="block text-[11px] opacity-80 mt-0.5">+2 stages advance</span>
@@ -320,4 +339,3 @@ export function ActiveRecallSession({ problem, onCompleteReview, onClose }) {
     </div>
   );
 }
-

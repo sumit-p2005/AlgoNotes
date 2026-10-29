@@ -13,7 +13,7 @@ import {
 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { Button } from '@/components/ui/Button';
-import { DifficultyBadge } from '@/components/ui/Badge';
+import { categorizeReviews } from '@/lib/revision/scheduler';
 
 export default function DashboardPage() {
   const [problems, setProblems] = useState([]);
@@ -49,35 +49,49 @@ export default function DashboardPage() {
     loadData();
   }, []);
 
-  const totalSaved = problems.length || 68;
-  const totalSolved = problems.filter((p) => p.status === 'Solved').length || 24;
-  const dueCount = 12;
-  const streak = 7;
+  // Compute metrics purely from real database state
+  const metrics = useMemo(() => {
+    const totalProblems = problems.length;
+    const solvedCount = problems.filter((p) => p.status === 'Solved').length;
+    const cat = categorizeReviews(schedules);
+    const dueCount = cat.totalActionable;
 
-  // Recent activity sample list matching reference
-  const recentActivities = [
-    {
-      id: '3sum',
-      title: '3Sum',
-      tags: 'Arrays • Two Pointers',
-      time: '2h ago',
-      status: 'Solved',
-    },
-    {
-      id: 'binary-tree-inorder',
-      title: 'Binary Tree Inorder',
-      tags: 'Trees • Traversal',
-      time: '5h ago',
-      status: 'Solved',
-    },
-    {
-      id: 'dp-subsets',
-      title: 'DP on Subsets',
-      tags: 'DP • Bitmasking',
-      time: '1d ago',
-      status: 'Solved',
-    },
-  ];
+    // Consecutive streak calculation from real review history dates
+    const reviewDates = history.map((h) => h.reviewed_at?.split('T')[0]).filter(Boolean);
+    const uniqueDays = Array.from(new Set(reviewDates)).sort().reverse();
+
+    let streak = 0;
+    if (uniqueDays.length > 0) {
+      const todayStr = new Date().toISOString().split('T')[0];
+      const yesterdayStr = new Date(Date.now() - 86400000).toISOString().split('T')[0];
+
+      if (uniqueDays[0] === todayStr || uniqueDays[0] === yesterdayStr) {
+        streak = 1;
+        let curr = new Date(uniqueDays[0]);
+        for (let i = 1; i < uniqueDays.length; i++) {
+          const prev = new Date(uniqueDays[i]);
+          const diffDays = Math.round((curr - prev) / (1000 * 3600 * 24));
+          if (diffDays === 1) {
+            streak++;
+            curr = prev;
+          } else {
+            break;
+          }
+        }
+      }
+    }
+
+    return {
+      totalProblems,
+      solvedCount,
+      dueCount,
+      streak,
+      overdueCount: cat.overdue.length,
+    };
+  }, [problems, schedules, history]);
+
+  // Actual recent problems list from database
+  const recentProblems = problems.slice(0, 5);
 
   return (
     <div className="p-4 sm:p-8 max-w-6xl mx-auto space-y-6 text-foreground">
@@ -99,25 +113,25 @@ export default function DashboardPage() {
         </Link>
       </div>
 
-      {/* 4 KPI Metrics Grid */}
+      {/* 4 KPI Metrics Grid (Real DB values) */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3.5">
         <div className="p-4 rounded-2xl border border-border bg-panel">
           <span className="text-2xl sm:text-3xl font-bold text-foreground block">
-            {totalSolved}
+            {metrics.solvedCount}
           </span>
           <span className="text-xs text-muted block mt-1">Problems Solved</span>
         </div>
 
         <div className="p-4 rounded-2xl border border-border bg-panel">
           <span className="text-2xl sm:text-3xl font-bold text-amber-400 block">
-            {dueCount}
+            {metrics.dueCount}
           </span>
           <span className="text-xs text-muted block mt-1">Due Today</span>
         </div>
 
         <div className="p-4 rounded-2xl border border-border bg-panel">
           <span className="text-2xl sm:text-3xl font-bold text-foreground block">
-            {totalSaved}
+            {metrics.totalProblems}
           </span>
           <span className="text-xs text-muted block mt-1">Total Notes</span>
         </div>
@@ -125,7 +139,7 @@ export default function DashboardPage() {
         <div className="p-4 rounded-2xl border border-border bg-panel">
           <div className="flex items-center gap-1.5">
             <span className="text-2xl sm:text-3xl font-bold text-foreground">
-              {streak}
+              {metrics.streak}
             </span>
             <Flame className="w-5 h-5 text-amber-500 fill-amber-500" />
           </div>
@@ -140,26 +154,40 @@ export default function DashboardPage() {
             Today&apos;s Revision
           </span>
           <p className="text-sm font-semibold text-foreground mt-0.5">
-            3 problems due for active recall
+            {metrics.dueCount > 0
+              ? `${metrics.dueCount} problems due for active recall`
+              : 'All caught up! No problems due for revision today'}
           </p>
         </div>
 
-        <Link href="/revision">
-          <button
-            type="button"
-            className="px-4 py-2 rounded-xl bg-accent text-accent-text hover:bg-accent-hover font-bold text-xs tracking-wide shadow-xs transition-colors cursor-pointer flex items-center gap-1.5"
-          >
-            <span>Start Revision</span>
-            <ArrowRight className="w-3.5 h-3.5" />
-          </button>
-        </Link>
+        {metrics.dueCount > 0 ? (
+          <Link href="/revision">
+            <button
+              type="button"
+              className="px-4 py-2 rounded-xl bg-accent text-accent-text hover:bg-accent-hover font-bold text-xs tracking-wide shadow-xs transition-colors cursor-pointer flex items-center gap-1.5"
+            >
+              <span>Start Revision</span>
+              <ArrowRight className="w-3.5 h-3.5" />
+            </button>
+          </Link>
+        ) : (
+          <Link href="/problems/new">
+            <button
+              type="button"
+              className="px-4 py-2 rounded-xl border border-border bg-panel hover:bg-elevated text-foreground font-bold text-xs tracking-wide shadow-xs transition-colors cursor-pointer flex items-center gap-1.5"
+            >
+              <span>Create New Note</span>
+              <ArrowRight className="w-3.5 h-3.5" />
+            </button>
+          </Link>
+        )}
       </div>
 
       {/* Recent Activity */}
       <div className="p-5 rounded-2xl border border-border bg-panel space-y-4">
         <div className="flex items-center justify-between">
           <span className="text-xs font-bold uppercase tracking-wider text-muted">
-            Recent Activity
+            Recent Notes & Activity
           </span>
           <Link
             href="/problems"
@@ -170,27 +198,47 @@ export default function DashboardPage() {
           </Link>
         </div>
 
-        <div className="divide-y divide-border/60 text-xs">
-          {recentActivities.map((item) => (
-            <Link
-              key={item.id}
-              href={`/problems/${item.id}`}
-              className="py-3 flex items-center justify-between hover:bg-elevated/40 px-2 rounded-xl transition-colors"
-            >
-              <div className="flex items-center gap-3">
-                <CheckCircle2 className="w-4 h-4 text-emerald-500" />
-                <div>
-                  <span className="font-semibold text-foreground text-sm block">
-                    {item.title}
-                  </span>
-                  <span className="text-muted text-xs">{item.tags}</span>
-                </div>
-              </div>
-
-              <span className="text-muted text-xs">{item.time}</span>
+        {recentProblems.length === 0 ? (
+          <div className="p-8 text-center space-y-2">
+            <p className="text-sm font-semibold text-foreground">No notes created yet</p>
+            <p className="text-xs text-muted">
+              Start by adding your first problem note to track your algorithmic progress.
+            </p>
+            <Link href="/problems/new" className="inline-block mt-2">
+              <Button size="sm">Create First Note</Button>
             </Link>
-          ))}
-        </div>
+          </div>
+        ) : (
+          <div className="divide-y divide-border/60 text-xs">
+            {recentProblems.map((item) => (
+              <Link
+                key={item.id}
+                href={`/problems/${item.id}`}
+                className="py-3 flex items-center justify-between hover:bg-elevated/40 px-2 rounded-xl transition-colors"
+              >
+                <div className="flex items-center gap-3">
+                  <CheckCircle2
+                    className={`w-4 h-4 ${
+                      item.status === 'Solved' ? 'text-emerald-500' : 'text-muted'
+                    }`}
+                  />
+                  <div>
+                    <span className="font-semibold text-foreground text-sm block">
+                      {item.title}
+                    </span>
+                    <span className="text-muted text-xs">
+                      {item.difficulty} • {item.language || 'Code'}
+                    </span>
+                  </div>
+                </div>
+
+                <span className="text-muted text-xs">
+                  {new Date(item.updated_at || item.created_at).toLocaleDateString()}
+                </span>
+              </Link>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );

@@ -90,12 +90,25 @@ test('Revision Scheduler - Easy rating accelerates progression', () => {
   assert.equal(res.intervalDays, 21);
 });
 
+test('Revision Scheduler - Year boundary date crossing calculation', () => {
+  const endOfYear = new Date('2026-12-31T12:00:00Z');
+  const result = calculateNextReview({
+    rating: RECALL_RATINGS.DIFFICULT,
+    currentStage: 1,
+    nowDate: endOfYear,
+  });
+
+  assert.equal(result.intervalDays, 3);
+  assert.equal(result.nextReviewAt.toISOString(), '2027-01-03T12:00:00.000Z');
+});
+
 test('Revision Scheduler - Categorize Due, Overdue, and Upcoming accurately', () => {
   const ref = new Date('2026-10-30T12:00:00Z');
   const items = [
     { id: '1', next_review_at: '2026-10-28T12:00:00Z' }, // overdue
     { id: '2', next_review_at: '2026-10-30T09:00:00Z' }, // due today
     { id: '3', next_review_at: '2026-11-05T12:00:00Z' }, // upcoming
+    { id: '4', next_review_at: 'invalid-date' }, // invalid date ignored safely
   ];
 
   const categorized = categorizeReviews(items, ref);
@@ -108,3 +121,10 @@ test('Revision Scheduler - Categorize Due, Overdue, and Upcoming accurately', ()
   assert.equal(categorized.totalActionable, 2);
 });
 
+test('Revision Scheduler - Empty list handling', () => {
+  const categorized = categorizeReviews([], new Date());
+  assert.equal(categorized.overdue.length, 0);
+  assert.equal(categorized.dueToday.length, 0);
+  assert.equal(categorized.upcoming.length, 0);
+  assert.equal(categorized.totalActionable, 0);
+});

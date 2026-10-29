@@ -91,12 +91,15 @@ export default function SettingsPage() {
 
         await supabase
           .from('user_settings')
-          .upsert({
-            user_id: user.id,
-            daily_review_goal: Number(settings.daily_review_goal),
-            preferred_code_language: settings.preferred_code_language,
-            updated_at: new Date().toISOString(),
-          });
+          .upsert(
+            {
+              user_id: user.id,
+              daily_review_goal: Number(settings.daily_review_goal),
+              preferred_code_language: settings.preferred_code_language,
+              updated_at: new Date().toISOString(),
+            },
+            { onConflict: 'user_id' }
+          );
 
         setSaveSuccess(true);
         setTimeout(() => setSaveSuccess(false), 3000);

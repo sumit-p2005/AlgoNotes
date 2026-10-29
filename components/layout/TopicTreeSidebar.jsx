@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
@@ -13,8 +13,9 @@ import {
   Search,
   GitFork,
 } from 'lucide-react';
+import { createClient } from '@/lib/supabase/client';
 
-const DEFAULT_TREE = [
+const STARTER_TREE = [
   {
     id: 'arrays',
     name: 'Arrays',
@@ -51,10 +52,59 @@ const DEFAULT_TREE = [
   { id: 'bit-manipulation', name: 'Bit Manipulation', subtopics: [] },
 ];
 
-export function TopicTreeSidebar({ activeProblemId = '3sum' }) {
-  const [tree, setTree] = useState(DEFAULT_TREE);
+export function TopicTreeSidebar() {
+  const [tree, setTree] = useState(STARTER_TREE);
   const [search, setSearch] = useState('');
   const pathname = usePathname();
+
+  useEffect(() => {
+    async function loadTreeData() {
+      try {
+        const supabase = createClient();
+        const [{ data: topicsData }, { data: problemsData }] = await Promise.all([
+          supabase.from('topics').select('*').order('order_index', { ascending: true }),
+          supabase.from('problems').select('id, title, topic_id').order('title', { ascending: true }),
+        ]);
+
+        if (topicsData && topicsData.length > 0) {
+          const rootTopics = topicsData.filter((t) => !t.parent_id);
+          const subMap = {};
+          topicsData.forEach((t) => {
+            if (t.parent_id) {
+              if (!subMap[t.parent_id]) subMap[t.parent_id] = [];
+              subMap[t.parent_id].push(t);
+            }
+          });
+
+          const probMap = {};
+          (problemsData || []).forEach((p) => {
+            if (p.topic_id) {
+              if (!probMap[p.topic_id]) probMap[p.topic_id] = [];
+              probMap[p.topic_id].push(p);
+            }
+          });
+
+          const constructed = rootTopics.map((rt) => ({
+            id: rt.id,
+            name: rt.name,
+            isExpanded: true,
+            problems: probMap[rt.id] || [],
+            subtopics: (subMap[rt.id] || []).map((sub) => ({
+              id: sub.id,
+              name: sub.name,
+              isExpanded: true,
+              problems: probMap[sub.id] || [],
+            })),
+          }));
+
+          setTree(constructed);
+        }
+      } catch {
+        // Retain starter taxonomy if table is empty
+      }
+    }
+    loadTreeData();
+  }, [pathname]);
 
   const toggleFolder = (topicId) => {
     setTree((prev) =>
@@ -88,17 +138,17 @@ export function TopicTreeSidebar({ activeProblemId = '3sum' }) {
           <Link
             href="/topics"
             className="p-1 rounded hover:bg-elevated hover:text-foreground"
-            title="Add topic"
+            title="Manage topics"
           >
             <Plus className="w-3.5 h-3.5" />
           </Link>
-          <button
-            type="button"
+          <Link
+            href="/topics"
             className="p-1 rounded hover:bg-elevated hover:text-foreground"
             title="Topic actions"
           >
             <MoreVertical className="w-3.5 h-3.5" />
-          </button>
+          </Link>
         </div>
       </div>
 
@@ -120,6 +170,13 @@ export function TopicTreeSidebar({ activeProblemId = '3sum' }) {
       <div className="flex-1 overflow-y-auto p-2 space-y-0.5">
         {tree.map((topic) => {
           const hasSubs = topic.subtopics && topic.subtopics.length > 0;
+          const hasDirectProblems = topic.problems && topic.problems.length > 0;
+          const matchSearch =
+            !search.trim() ||
+            topic.name.toLowerCase().includes(search.toLowerCase());
+
+          if (!matchSearch && !hasSubs) return null;
+
           return (
             <div key={topic.id} className="space-y-0.5">
               {/* Topic Root Header */}
@@ -128,7 +185,7 @@ export function TopicTreeSidebar({ activeProblemId = '3sum' }) {
                 onClick={() => toggleFolder(topic.id)}
                 className="w-full flex items-center gap-1.5 px-2 py-1.5 rounded-lg hover:bg-elevated text-muted hover:text-foreground transition-colors text-left"
               >
-                {hasSubs ? (
+                {hasSubs || hasDirectProblems ? (
                   topic.isExpanded ? (
                     <ChevronDown className="w-3.5 h-3.5 text-muted shrink-0" />
                   ) : (
@@ -145,11 +202,38 @@ export function TopicTreeSidebar({ activeProblemId = '3sum' }) {
                 <span className="truncate font-medium">{topic.name}</span>
               </button>
 
+              {/* Direct Problems in this topic */}
+              {hasDirectProblems && topic.isExpanded && (
+                <div className="pl-6 space-y-0.5">
+                  {topic.problems.map((prob) => {
+                    const isCurrent = pathname.includes(prob.id);
+                    return (
+                      <Link
+                        key={prob.id}
+                        href={`/problems/${prob.id}`}
+                        className={`w-full flex items-center gap-2 px-2.5 py-1 rounded-md text-[11px] transition-colors ${
+                          isCurrent
+                            ? 'bg-amber-400/15 text-amber-400 font-semibold'
+                            : 'text-muted hover:text-foreground hover:bg-elevated'
+                        }`}
+                      >
+                        <span
+                          className={`w-1.5 h-1.5 rounded-full ${
+                            isCurrent ? 'bg-amber-400' : 'bg-muted/60'
+                          }`}
+                        />
+                        <span className="truncate">{prob.title}</span>
+                      </Link>
+                    );
+                  })}
+                </div>
+              )}
+
               {/* Subtopics */}
               {hasSubs && topic.isExpanded && (
                 <div className="pl-4 space-y-0.5">
                   {topic.subtopics.map((sub) => {
-                    const hasProblems = sub.problems && sub.problems.length > 0;
+                    const hasSubProblems = sub.problems && sub.problems.length > 0;
                     return (
                       <div key={sub.id} className="space-y-0.5">
                         <button
@@ -157,7 +241,7 @@ export function TopicTreeSidebar({ activeProblemId = '3sum' }) {
                           onClick={() => toggleSubfolder(topic.id, sub.id)}
                           className="w-full flex items-center gap-1.5 px-2 py-1 rounded-lg hover:bg-elevated text-muted hover:text-foreground transition-colors text-left"
                         >
-                          {hasProblems ? (
+                          {hasSubProblems ? (
                             sub.isExpanded ? (
                               <ChevronDown className="w-3 h-3 text-muted shrink-0" />
                             ) : (
@@ -171,13 +255,10 @@ export function TopicTreeSidebar({ activeProblemId = '3sum' }) {
                         </button>
 
                         {/* Problems inside subtopic */}
-                        {hasProblems && sub.isExpanded && (
+                        {hasSubProblems && sub.isExpanded && (
                           <div className="pl-4 space-y-0.5">
                             {sub.problems.map((prob) => {
-                              const isCurrent =
-                                prob.isCurrent ||
-                                activeProblemId === prob.id ||
-                                pathname.includes(prob.id);
+                              const isCurrent = pathname.includes(prob.id);
                               return (
                                 <Link
                                   key={prob.id}

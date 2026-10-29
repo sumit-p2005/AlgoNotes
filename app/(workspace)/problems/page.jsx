@@ -76,7 +76,18 @@ export default function AllProblemsPage() {
 
     try {
       const supabase = createClient();
+      const { data: { user } } = await supabase.auth.getUser();
       await supabase.from('problems').update({ is_bookmarked: nextVal }).eq('id', id);
+      if (user) {
+        if (nextVal) {
+          await supabase.from('bookmarks').upsert(
+            { user_id: user.id, problem_id: id },
+            { onConflict: 'user_id,problem_id' }
+          );
+        } else {
+          await supabase.from('bookmarks').delete().match({ user_id: user.id, problem_id: id });
+        }
+      }
     } catch (err) {
       console.error('Failed to toggle bookmark:', err);
     }
