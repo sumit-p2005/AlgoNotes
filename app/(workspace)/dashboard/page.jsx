@@ -10,42 +10,66 @@ import {
   ArrowRight,
   Clock,
   Sparkles,
+  BookOpen,
+  Layers,
+  ChevronRight,
 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { Button } from '@/components/ui/Button';
 import { categorizeReviews } from '@/lib/revision/scheduler';
+import { CurrentProgressWizard } from '@/components/onboarding/CurrentProgressWizard';
 
 export default function DashboardPage() {
   const [problems, setProblems] = useState([]);
   const [schedules, setSchedules] = useState([]);
   const [history, setHistory] = useState([]);
   const [userName, setUserName] = useState('Sumit Patel');
+  const [curriculumData, setCurriculumData] = useState(null);
+  const [showOnboardingModal, setShowOnboardingModal] = useState(false);
+  const [hasCompletedOnboarding, setHasCompletedOnboarding] = useState(true);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    async function loadData() {
-      try {
-        const supabase = createClient();
-        const [{ data: user }, { data: pData }, { data: sData }, { data: hData }] =
-          await Promise.all([
-            supabase.auth.getUser(),
-            supabase.from('problems').select('*').order('updated_at', { ascending: false }),
-            supabase.from('problem_review_schedules').select('*'),
-            supabase.from('problem_review_history').select('*').order('reviewed_at', { ascending: false }),
-          ]);
+  const loadData = async () => {
+    try {
+      const supabase = createClient();
+      const [{ data: user }, { data: pData }, { data: sData }, { data: hData }] =
+        await Promise.all([
+          supabase.auth.getUser(),
+          supabase.from('problems').select('*').order('updated_at', { ascending: false }),
+          supabase.from('problem_review_schedules').select('*'),
+          supabase.from('problem_review_history').select('*').order('reviewed_at', { ascending: false }),
+        ]);
 
-        if (user?.user?.user_metadata?.full_name) {
-          setUserName(user.user.user_metadata.full_name);
-        }
-        setProblems(pData || []);
-        setSchedules(sData || []);
-        setHistory(hData || []);
-      } catch (err) {
-        console.error('Dashboard load error:', err);
-      } finally {
-        setLoading(false);
+      if (user?.user?.user_metadata?.full_name) {
+        setUserName(user.user.user_metadata.full_name);
       }
+      setProblems(pData || []);
+      setSchedules(sData || []);
+      setHistory(hData || []);
+
+      // Fetch curriculum stats & onboarding status
+      const [currRes, onbRes] = await Promise.all([
+        fetch('/api/curriculum'),
+        fetch('/api/curriculum/onboarding'),
+      ]);
+
+      if (currRes.ok) {
+        const cData = await currRes.json();
+        setCurriculumData(cData);
+      }
+
+      if (onbRes.ok) {
+        const oData = await onbRes.json();
+        setHasCompletedOnboarding(!!oData.completedOnboarding);
+      }
+    } catch (err) {
+      console.error('Dashboard load error:', err);
+    } finally {
+      setLoading(false);
     }
+  };
+
+  useEffect(() => {
     loadData();
   }, []);
 
@@ -86,16 +110,35 @@ export default function DashboardPage() {
       solvedCount,
       dueCount,
       streak,
-      overdueCount: cat.overdue.length,
     };
   }, [problems, schedules, history]);
 
-  // Actual recent problems list from database
-  const recentProblems = problems.slice(0, 5);
+  const recentProblems = useMemo(() => {
+    return problems.slice(0, 5);
+  }, [problems]);
+
+  const currStats = curriculumData?.stats || {
+    totalProblems: 463,
+    totalSolved: 0,
+    completionPercent: 0,
+    totalTopicsStudied: 0,
+  };
 
   return (
-    <div className="p-4 sm:p-8 max-w-6xl mx-auto space-y-6 text-foreground">
-      {/* Header Greeting */}
+    <div className="flex-1 p-4 sm:p-6 lg:p-8 space-y-6 max-w-7xl w-full mx-auto overflow-y-auto">
+      {/* Onboarding Wizard Modal */}
+      <CurrentProgressWizard
+        isOpen={showOnboardingModal}
+        onClose={() => setShowOnboardingModal(false)}
+        curriculumData={curriculumData}
+        initialMode="choice"
+        onComplete={() => {
+          setHasCompletedOnboarding(true);
+          loadData();
+        }}
+      />
+
+      {/* Top Greeting Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <span className="text-xs text-muted">Good Evening</span>
@@ -106,14 +149,55 @@ export default function DashboardPage() {
           <p className="text-xs text-muted mt-0.5">Keep learning, keep growing!</p>
         </div>
 
-        <Link href="/problems/new">
-          <Button size="md" className="gap-2 font-bold">
-            <span>+ New Note</span>
-          </Button>
-        </Link>
+        <div className="flex items-center gap-2.5">
+          <button
+            type="button"
+            onClick={() => setShowOnboardingModal(true)}
+            className="flex items-center gap-2 px-3.5 py-2 rounded-xl border border-amber-400/40 bg-amber-400/10 text-amber-400 hover:bg-amber-400/20 text-xs font-bold transition-all shadow-xs cursor-pointer"
+          >
+            <Sparkles className="w-3.5 h-3.5" />
+            <span>Update My Progress</span>
+          </button>
+
+          <Link href="/problems/new">
+            <Button size="md" className="gap-2 font-bold">
+              <span>+ New Note</span>
+            </Button>
+          </Link>
+        </div>
       </div>
 
-      {/* 4 KPI Metrics Grid (Real DB values) */}
+      {/* New User Onboarding Callout Banner (if onboarding not completed) */}
+      {!hasCompletedOnboarding && (
+        <div className="p-5 rounded-2xl border border-amber-400/40 bg-gradient-to-r from-amber-400/15 via-[#0E120F] to-[#0A0D0B] flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-lg animate-fade-in">
+          <div className="space-y-1">
+            <div className="flex items-center gap-2">
+              <span className="px-2 py-0.5 rounded-full bg-amber-400 text-black text-[10px] font-black uppercase">
+                Welcome Onboarding
+              </span>
+              <span className="text-xs font-bold text-amber-400">
+                Setup your Striver A2Z DSA progress
+              </span>
+            </div>
+            <p className="text-xs text-muted max-w-xl leading-relaxed">
+              Have you already solved problems on Striver’s sheet? Mark your completed topics and questions so you don’t have to start from scratch.
+            </p>
+          </div>
+
+          <div className="flex items-center gap-2 shrink-0">
+            <button
+              type="button"
+              onClick={() => setShowOnboardingModal(true)}
+              className="px-4 py-2 rounded-xl bg-accent text-accent-text hover:bg-accent-hover font-bold text-xs tracking-wide shadow-xs transition-colors cursor-pointer flex items-center gap-1.5"
+            >
+              <Sparkles className="w-3.5 h-3.5" />
+              <span>Start From My Current Progress</span>
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* 4 KPI Metrics Grid */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3.5">
         <div className="p-4 rounded-2xl border border-border bg-panel">
           <span className="text-2xl sm:text-3xl font-bold text-foreground block">
@@ -133,7 +217,7 @@ export default function DashboardPage() {
           <span className="text-2xl sm:text-3xl font-bold text-foreground block">
             {metrics.totalProblems}
           </span>
-          <span className="text-xs text-muted block mt-1">Total Notes</span>
+          <span className="text-xs text-muted block mt-1">Custom Notes</span>
         </div>
 
         <div className="p-4 rounded-2xl border border-border bg-panel">
@@ -144,6 +228,43 @@ export default function DashboardPage() {
             <Flame className="w-5 h-5 text-amber-500 fill-amber-500" />
           </div>
           <span className="text-xs text-muted block mt-1">Streak</span>
+        </div>
+      </div>
+
+      {/* Preinstalled Striver A2Z DSA Sheet Card */}
+      <div className="p-5 rounded-2xl border border-[#232924] bg-gradient-to-r from-[#0E120F] to-[#0A0D0B] flex flex-col md:flex-row md:items-center justify-between gap-5 shadow-md">
+        <div className="space-y-2 flex-1">
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-lg bg-amber-400 text-black flex items-center justify-center font-black text-xs shadow-sm">
+              A2Z
+            </div>
+            <div>
+              <h3 className="text-sm font-bold text-foreground flex items-center gap-2">
+                <span>Striver A2Z DSA Sheet</span>
+                <span className="text-[10px] text-muted font-normal">• Preinstalled</span>
+              </h3>
+              <p className="text-[11px] text-muted">
+                {currStats.totalTopicsStudied} of 18 Topics Studied • {currStats.totalSolved} of 463 Questions Solved
+              </p>
+            </div>
+          </div>
+
+          <div className="w-full max-w-md h-2 rounded-full bg-[#181D19] overflow-hidden">
+            <div
+              className="h-full bg-gradient-to-r from-amber-500 to-amber-300 rounded-full transition-all duration-500"
+              style={{ width: `${Math.min(100, Math.max(currStats.completionPercent, 2))}%` }}
+            />
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2 shrink-0">
+          <Link
+            href="/sheets/striver-a2z"
+            className="px-4 py-2 rounded-xl bg-amber-400 hover:bg-amber-300 text-black font-bold text-xs flex items-center gap-1.5 transition-colors cursor-pointer"
+          >
+            <span>Open Sheet</span>
+            <ChevronRight className="w-4 h-4" />
+          </Link>
         </div>
       </div>
 
@@ -171,12 +292,12 @@ export default function DashboardPage() {
             </button>
           </Link>
         ) : (
-          <Link href="/problems/new">
+          <Link href="/sheets/striver-a2z">
             <button
               type="button"
               className="px-4 py-2 rounded-xl border border-border bg-panel hover:bg-elevated text-foreground font-bold text-xs tracking-wide shadow-xs transition-colors cursor-pointer flex items-center gap-1.5"
             >
-              <span>Create New Note</span>
+              <span>Practice Problems</span>
               <ArrowRight className="w-3.5 h-3.5" />
             </button>
           </Link>

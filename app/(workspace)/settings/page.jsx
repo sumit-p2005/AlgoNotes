@@ -13,11 +13,14 @@ import {
   ShieldAlert,
   Save,
   CheckCircle2,
+  Sparkles,
+  BookOpen,
 } from 'lucide-react';
 import { useTheme } from '@/components/theme/ThemeProvider';
 import { createClient } from '@/lib/supabase/client';
 import { Button } from '@/components/ui/Button';
 import { Input, Select } from '@/components/ui/Input';
+import { CurrentProgressWizard } from '@/components/onboarding/CurrentProgressWizard';
 
 export default function SettingsPage() {
   const { theme, setTheme } = useTheme();
@@ -33,6 +36,21 @@ export default function SettingsPage() {
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [loading, setLoading] = useState(true);
   const [isExporting, setIsExporting] = useState(false);
+  const [isWizardOpen, setIsWizardOpen] = useState(false);
+  const [curriculumData, setCurriculumData] = useState(null);
+
+  useEffect(() => {
+    async function loadCurriculum() {
+      try {
+        const res = await fetch('/api/curriculum');
+        if (res.ok) {
+          const data = await res.json();
+          setCurriculumData(data);
+        }
+      } catch (e) {}
+    }
+    loadCurriculum();
+  }, []);
 
   useEffect(() => {
     async function loadUserData() {
@@ -292,6 +310,72 @@ export default function SettingsPage() {
           </Button>
         </div>
       </form>
+
+      {/* Striver A2Z Progress Management */}
+      <div className="p-6 rounded-xl border border-border bg-panel shadow-xs space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div>
+            <h2 className="text-sm font-bold text-foreground flex items-center gap-2">
+              <BookOpen className="w-4 h-4 text-amber-400" />
+              <span>Striver A2Z Curriculum & Progress</span>
+            </h2>
+            <p className="text-xs text-muted mt-0.5">
+              Revisit your completed topics, mark newly solved questions, or adjust your active recall revision queue.
+            </p>
+          </div>
+
+          <Button
+            type="button"
+            variant="primary"
+            size="sm"
+            onClick={() => setIsWizardOpen(true)}
+            className="gap-2 font-bold shrink-0"
+          >
+            <Sparkles className="w-4 h-4" />
+            <span>Update My Progress</span>
+          </Button>
+        </div>
+
+        {curriculumData?.stats && (
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-2 text-center text-xs">
+            <div className="p-3 rounded-lg bg-elevated/40 border border-border">
+              <span className="font-bold text-foreground text-base block">
+                {curriculumData.stats.totalTopicsStudied} / 18
+              </span>
+              <span className="text-[10px] text-muted">Topics Studied</span>
+            </div>
+            <div className="p-3 rounded-lg bg-elevated/40 border border-border">
+              <span className="font-bold text-emerald-400 text-base block">
+                {curriculumData.stats.totalSolved} / 463
+              </span>
+              <span className="text-[10px] text-muted">Questions Solved</span>
+            </div>
+            <div className="p-3 rounded-lg bg-elevated/40 border border-border">
+              <span className="font-bold text-blue-400 text-base block">
+                {curriculumData.stats.totalAttempted}
+              </span>
+              <span className="text-[10px] text-muted">Attempted</span>
+            </div>
+            <div className="p-3 rounded-lg bg-elevated/40 border border-border">
+              <span className="font-bold text-amber-400 text-base block">
+                {curriculumData.stats.totalNeedsRevision}
+              </span>
+              <span className="text-[10px] text-muted">Needs Revision</span>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Progress Wizard Modal */}
+      <CurrentProgressWizard
+        isOpen={isWizardOpen}
+        onClose={() => setIsWizardOpen(false)}
+        curriculumData={curriculumData}
+        initialMode="wizard"
+        onComplete={() => {
+          fetch('/api/curriculum').then(res => res.json()).then(data => setCurriculumData(data));
+        }}
+      />
 
       {/* Data Export & Backup */}
       <div className="p-6 rounded-xl border border-border bg-panel shadow-xs space-y-4">

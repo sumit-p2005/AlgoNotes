@@ -28,13 +28,16 @@ export default function RevisionPage() {
   const [activeTab, setActiveTab] = useState('due'); // 'due' | 'overdue' | 'upcoming' | 'history'
   const [loading, setLoading] = useState(true);
 
+  const [curriculumDue, setCurriculumDue] = useState([]);
+
   const fetchRevisionData = async () => {
     try {
       const supabase = createClient();
-      const [{ data: schedData }, { data: histData }, { data: probData }] = await Promise.all([
+      const [{ data: schedData }, { data: histData }, { data: probData }, currRevRes] = await Promise.all([
         supabase.from('problem_review_schedules').select('*').order('next_review_at', { ascending: true }),
         supabase.from('problem_review_history').select('*').order('reviewed_at', { ascending: false }).limit(20),
         supabase.from('problems').select('*'),
+        fetch('/api/curriculum/revision').then(r => r.ok ? r.json() : { dueProblems: [] }).catch(() => ({ dueProblems: [] })),
       ]);
 
       const pMap = {};
@@ -45,6 +48,7 @@ export default function RevisionPage() {
       setSchedules(schedData || []);
       setHistory(histData || []);
       setProblemsMap(pMap);
+      setCurriculumDue(currRevRes?.dueProblems || []);
     } catch (err) {
       console.error('Error fetching revision data:', err);
     } finally {
@@ -215,6 +219,50 @@ export default function RevisionPage() {
       </div>
 
       {/* Tab Panels */}
+      {curriculumDue.length > 0 && activeTab === 'due' && (
+        <div className="rounded-xl border border-amber-400/30 bg-amber-400/5 p-4 space-y-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
+              <h3 className="text-xs font-bold text-foreground">
+                Striver A2Z Revision Queue ({curriculumDue.length} due today)
+              </h3>
+            </div>
+            <Link
+              href="/sheets/striver-a2z"
+              className="text-[11px] text-amber-400 hover:underline flex items-center gap-1 font-semibold"
+            >
+              <span>View Full Sheet</span>
+              <ChevronRight className="w-3.5 h-3.5" />
+            </Link>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
+            {curriculumDue.slice(0, 6).map((cp) => (
+              <Link
+                key={cp.id}
+                href={`/sheets/striver-a2z/${cp.id}`}
+                className="p-3 rounded-lg border border-[#1C221D] bg-[#0A0D0B] hover:border-amber-400/40 hover:bg-[#121613] transition-all flex items-center justify-between gap-2"
+              >
+                <div className="min-w-0 flex-1">
+                  <div className="text-xs font-semibold text-foreground truncate">
+                    #{cp.problem_number} {cp.title}
+                  </div>
+                  <div className="text-[10px] text-muted flex items-center gap-1.5 mt-0.5">
+                    <span className="text-amber-400 font-semibold">{cp.difficulty}</span>
+                    <span>•</span>
+                    <span>Stage {cp.review_stage || 1}</span>
+                  </div>
+                </div>
+                <div className="px-2 py-1 rounded bg-amber-400/10 text-amber-400 text-[10px] font-bold shrink-0">
+                  Revise
+                </div>
+              </Link>
+            ))}
+          </div>
+        </div>
+      )}
+
       {loading ? (
         <div className="p-12 text-center text-xs text-muted flex items-center justify-center gap-2">
           <span className="w-2 h-2 rounded-full bg-accent animate-ping" />

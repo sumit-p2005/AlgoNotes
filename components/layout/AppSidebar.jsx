@@ -6,6 +6,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import Image from 'next/image';
 import {
   Home,
+  BookOpen,
   CalendarCheck2,
   FolderTree,
   Grid2X2,
@@ -22,6 +23,7 @@ import { createClient } from '@/lib/supabase/client';
 
 const NAV_ITEMS = [
   { label: 'Dashboard', href: '/dashboard', icon: Home },
+  { label: 'DSA Sheets', href: '/sheets', icon: BookOpen, badgeText: 'A2Z' },
   { label: 'Revision', href: '/revision', icon: CalendarCheck2, showBadge: true },
   { label: 'Topics', href: '/topics', icon: FolderTree },
   { label: 'Patterns', href: '/patterns', icon: Grid2X2 },
@@ -157,6 +159,11 @@ export function AppSidebar({
                 {item.showBadge && dueCount > 0 && (
                   <span className="px-1.5 py-0.2 rounded-full bg-accent text-accent-text text-[10px] font-bold">
                     {dueCount}
+                  </span>
+                )}
+                {item.badgeText && (
+                  <span className="px-1.5 py-0.5 rounded-md bg-amber-400/20 text-amber-400 text-[10px] font-bold border border-amber-400/30">
+                    {item.badgeText}
                   </span>
                 )}
               </Link>
