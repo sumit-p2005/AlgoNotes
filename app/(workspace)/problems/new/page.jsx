@@ -56,3 +56,4 @@ export default function NewProblemPage() {
 
   return <ProblemNotebook isNew={true} topics={topics} patterns={patterns} />;
 }
+

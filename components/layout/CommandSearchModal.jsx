@@ -228,3 +228,4 @@ export function CommandSearchModal({ isOpen, onClose }) {
     </div>
   );
 }
+

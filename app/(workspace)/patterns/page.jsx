@@ -497,3 +497,4 @@ export default function PatternsPage() {
     </div>
   );
 }
+

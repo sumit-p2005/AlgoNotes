@@ -403,3 +403,4 @@ begin
   ) returning id into dp_pattern_id;
 end;
 $$ language plpgsql security definer;
+

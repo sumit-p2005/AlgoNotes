@@ -2,11 +2,10 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
-import { Button } from '@/components/ui/Button';
-import { Input } from '@/components/ui/Input';
-import { UserPlus, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { Mail, Lock, User, AlertCircle, CheckCircle2 } from 'lucide-react';
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -28,19 +27,12 @@ export default function RegisterPage() {
     setSuccessMessage('');
 
     if (password !== confirmPassword) {
-      setErrorMessage('Passwords do not match. Please verify and try again.');
-      return;
-    }
-
-    if (password.length < 6) {
-      setErrorMessage('Password must be at least 6 characters.');
+      setErrorMessage('Passwords do not match.');
       return;
     }
 
     if (!isSupabaseConfigured) {
-      setErrorMessage(
-        'Supabase is not configured yet. Please configure your .env.local credentials to enable real registration.'
-      );
+      router.push('/dashboard');
       return;
     }
 
@@ -61,129 +53,134 @@ export default function RegisterPage() {
         setErrorMessage(error.message);
       } else {
         if (data?.session) {
-          // If auto-confirm is enabled in Supabase, seed starter data and redirect
-          try {
-            await supabase.rpc('seed_user_starter_data', { target_user_id: data.user.id });
-          } catch {
-            // ignore
-          }
           router.push('/dashboard');
-          router.refresh();
         } else {
-          setSuccessMessage(
-            'Account created successfully! Please check your email to verify your address before signing in.'
-          );
+          setSuccessMessage('Check your email for confirmation!');
         }
       }
     } catch (err) {
-      setErrorMessage(err.message || 'An unexpected error occurred during signup.');
+      setErrorMessage(err.message || 'Signup failed.');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="rounded-2xl border border-border bg-panel p-6 sm:p-8 shadow-xl">
-      <div className="mb-6 text-center">
+    <div className="w-full max-w-sm mx-auto space-y-6 text-foreground">
+      {/* Logo */}
+      <div className="flex flex-col items-center text-center">
+        <div className="relative w-12 h-12 mb-3">
+          <Image
+            src="/algonotes-dark.png"
+            alt="AlgoNotes"
+            fill
+            className="hidden dark:block object-contain"
+            priority
+          />
+          <Image
+            src="/algonotes-light.png"
+            alt="AlgoNotes"
+            fill
+            className="block dark:hidden object-contain"
+            priority
+          />
+        </div>
+
         <h1 className="text-xl font-bold tracking-tight text-foreground">
-          Create your AlgoNotes account
+          Create Account
         </h1>
-        <p className="text-xs text-muted mt-1.5">
-          Join candidates retaining DSA intuition with active recall.
+        <p className="text-xs text-muted mt-1">
+          Begin your structured DSA preparation
         </p>
       </div>
 
+      {/* Sign In / Sign Up Pill Switcher */}
+      <div className="flex p-1 rounded-full border border-border bg-panel text-xs font-semibold">
+        <Link
+          href="/login"
+          className="flex-1 py-1.5 rounded-full text-center text-muted hover:text-foreground transition-all"
+        >
+          Sign In
+        </Link>
+        <button
+          type="button"
+          className="flex-1 py-1.5 rounded-full bg-accent text-accent-text transition-all"
+        >
+          Sign Up
+        </button>
+      </div>
+
       {errorMessage && (
-        <div className="mb-4 p-3 rounded-xl border border-red-500/30 bg-red-500/10 text-xs text-red-500 flex items-start gap-2">
+        <div className="p-3 rounded-xl border border-red-500/30 bg-red-500/10 text-xs text-red-500 flex items-start gap-2">
           <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
           <span>{errorMessage}</span>
         </div>
       )}
 
       {successMessage && (
-        <div className="mb-4 p-3 rounded-xl border border-emerald-500/30 bg-emerald-500/10 text-xs text-emerald-500 flex items-start gap-2">
+        <div className="p-3 rounded-xl border border-emerald-500/30 bg-emerald-500/10 text-xs text-emerald-500 flex items-start gap-2">
           <CheckCircle2 className="w-4 h-4 shrink-0 mt-0.5" />
           <span>{successMessage}</span>
         </div>
       )}
 
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <div>
-          <label className="block text-xs font-medium text-foreground mb-1.5">
-            Full Name
-          </label>
-          <Input
+      <form onSubmit={handleSubmit} className="space-y-3.5">
+        <div className="relative">
+          <User className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted" />
+          <input
             type="text"
             required
             value={fullName}
             onChange={(e) => setFullName(e.target.value)}
-            placeholder="John Doe"
-            autoComplete="name"
+            placeholder="Full Name"
+            className="w-full pl-9 pr-3 py-2 rounded-xl border border-border bg-panel text-xs text-foreground placeholder:text-muted focus:outline-none focus:ring-1 focus:ring-accent"
           />
         </div>
 
-        <div>
-          <label className="block text-xs font-medium text-foreground mb-1.5">
-            Email Address
-          </label>
-          <Input
+        <div className="relative">
+          <Mail className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted" />
+          <input
             type="email"
             required
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            placeholder="you@domain.com"
-            autoComplete="email"
+            placeholder="Email address"
+            className="w-full pl-9 pr-3 py-2 rounded-xl border border-border bg-panel text-xs text-foreground placeholder:text-muted focus:outline-none focus:ring-1 focus:ring-accent"
           />
         </div>
 
-        <div>
-          <label className="block text-xs font-medium text-foreground mb-1.5">
-            Password (min 6 characters)
-          </label>
-          <Input
+        <div className="relative">
+          <Lock className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted" />
+          <input
             type="password"
             required
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            placeholder="••••••••••••"
-            autoComplete="new-password"
+            placeholder="Password (min 6 characters)"
+            className="w-full pl-9 pr-3 py-2 rounded-xl border border-border bg-panel text-xs text-foreground placeholder:text-muted focus:outline-none focus:ring-1 focus:ring-accent"
           />
         </div>
 
-        <div>
-          <label className="block text-xs font-medium text-foreground mb-1.5">
-            Confirm Password
-          </label>
-          <Input
+        <div className="relative">
+          <Lock className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted" />
+          <input
             type="password"
             required
             value={confirmPassword}
             onChange={(e) => setConfirmPassword(e.target.value)}
-            placeholder="••••••••••••"
-            autoComplete="new-password"
+            placeholder="Confirm password"
+            className="w-full pl-9 pr-3 py-2 rounded-xl border border-border bg-panel text-xs text-foreground placeholder:text-muted focus:outline-none focus:ring-1 focus:ring-accent"
           />
         </div>
 
-        <Button
+        <button
           type="submit"
-          loading={loading}
-          className="w-full mt-2"
-          size="md"
+          disabled={loading}
+          className="w-full py-2.5 rounded-xl bg-accent text-accent-text hover:bg-accent-hover font-bold text-xs tracking-wide shadow-xs transition-colors cursor-pointer mt-2"
         >
-          <UserPlus className="w-4 h-4 mr-2" />
-          <span>Create Private Notebook</span>
-        </Button>
+          {loading ? 'Creating account...' : 'Create Account'}
+        </button>
       </form>
-
-      <div className="mt-6 text-center text-xs text-muted">
-        Already have an account?{' '}
-        <Link
-          href="/login"
-          className="text-amber-500 hover:text-amber-400 font-medium transition-colors"
-        >
-          Sign in
-        </Link>
-      </div>
     </div>
   );
 }

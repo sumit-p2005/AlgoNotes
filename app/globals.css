@@ -4,31 +4,38 @@
   :root {
     --bg-page: #FAFAF8;
     --bg-panel: #FFFFFF;
+    --bg-surface: #FFFFFF;
     --bg-elevated: #F3F4F1;
-    --text-primary: #181A17;
-    --text-secondary: #565D56;
-    --text-muted: #828B82;
+    --bg-card: #FFFFFF;
+    --text-primary: #111827;
+    --text-secondary: #4B5563;
+    --text-muted: #8E968E;
     --border-color: #E2E5E0;
     --border-strong: #CDD2CB;
     --accent: #FACC15;
     --accent-hover: #EAB308;
-    --accent-text: #854D0E;
+    --accent-text: #000000;
     --accent-subtle: #FEF9C3;
+    --accent-glow: #FACC1526;
   }
 
   .dark {
-    --bg-page: #090B0A;
-    --bg-panel: #111512;
-    --bg-elevated: #171B17;
-    --text-primary: #F5F5F0;
-    --text-secondary: #A0A8A0;
-    --text-muted: #6B736B;
-    --border-color: #1F2620;
-    --border-strong: #2D372F;
+    /* Pure Black & Near-Black Palette matching reference */
+    --bg-page: #000000;
+    --bg-panel: #0A0D0B;
+    --bg-surface: #0E1210;
+    --bg-elevated: #131714;
+    --bg-card: #0A0D0B;
+    --text-primary: #FFFFFF;
+    --text-secondary: #B0B8B0;
+    --text-muted: #667066;
+    --border-color: #19201B;
+    --border-strong: #242D26;
     --accent: #FACC15;
     --accent-hover: #EAB308;
     --accent-text: #000000;
-    --accent-subtle: #854D0E33;
+    --accent-subtle: #29240A;
+    --accent-glow: #FACC1533;
   }
 
   * {
@@ -47,7 +54,9 @@
 @theme {
   --color-page: var(--bg-page);
   --color-panel: var(--bg-panel);
+  --color-surface: var(--bg-surface);
   --color-elevated: var(--bg-elevated);
+  --color-card: var(--bg-card);
   --color-foreground: var(--text-primary);
   --color-secondary: var(--text-secondary);
   --color-muted: var(--text-muted);
@@ -57,12 +66,13 @@
   --color-accent-hover: var(--accent-hover);
   --color-accent-text: var(--accent-text);
   --color-accent-subtle: var(--accent-subtle);
+  --color-accent-glow: var(--accent-glow);
 }
 
-/* Custom scrollbars for developer notebook panels */
+/* Custom scrollbars matching ultra-dark IDE panels */
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 5px;
+  height: 5px;
 }
 
 ::-webkit-scrollbar-track {

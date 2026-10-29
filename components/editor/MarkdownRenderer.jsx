@@ -53,3 +53,4 @@ export function MarkdownRenderer({ content = '', className = '' }) {
     </div>
   );
 }
+

@@ -9,25 +9,45 @@ export function ThemeToggle({ className = '' }) {
 
   if (!mounted) {
     return (
-      <div className={`w-8 h-8 rounded-md bg-stone-200/50 dark:bg-stone-800/50 animate-pulse ${className}`} />
+      <div className={`w-14 h-7 rounded-full bg-elevated border border-border animate-pulse ${className}`} />
     );
   }
 
   const isDark = resolvedTheme === 'dark';
 
   return (
-    <button
-      type="button"
-      onClick={() => setTheme(isDark ? 'light' : 'dark')}
-      className={`relative inline-flex items-center justify-center w-8 h-8 rounded-lg border border-border text-foreground/80 hover:text-foreground hover:bg-surface-elevated transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${className}`}
-      title={`Switch to ${isDark ? 'light' : 'dark'} mode`}
-      aria-label={`Switch to ${isDark ? 'light' : 'dark'} mode`}
+    <div
+      className={`inline-flex items-center p-0.5 rounded-full border border-border bg-panel/80 ${className}`}
+      role="group"
+      aria-label="Theme switcher"
     >
-      {isDark ? (
-        <Sun className="w-4 h-4 text-amber-400" />
-      ) : (
-        <Moon className="w-4 h-4 text-stone-700" />
-      )}
-    </button>
+      <button
+        type="button"
+        onClick={() => setTheme('light')}
+        className={`flex items-center justify-center w-6 h-6 rounded-full transition-all ${
+          !isDark
+            ? 'bg-amber-400 text-black shadow-xs font-bold'
+            : 'text-muted hover:text-foreground'
+        }`}
+        title="Switch to light mode"
+        aria-label="Light mode"
+      >
+        <Sun className="w-3.5 h-3.5" />
+      </button>
+
+      <button
+        type="button"
+        onClick={() => setTheme('dark')}
+        className={`flex items-center justify-center w-6 h-6 rounded-full transition-all ${
+          isDark
+            ? 'bg-amber-400/20 text-amber-400 font-bold'
+            : 'text-muted hover:text-foreground'
+        }`}
+        title="Switch to dark mode"
+        aria-label="Dark mode"
+      >
+        <Moon className="w-3.5 h-3.5" />
+      </button>
+    </div>
   );
 }

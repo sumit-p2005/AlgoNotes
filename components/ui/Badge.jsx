@@ -65,3 +65,4 @@ export function StatusBadge({ status, size = 'sm', className = '' }) {
     </Badge>
   );
 }
+

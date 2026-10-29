@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Search, Bell, User, LogOut, Settings as SettingsIcon, Menu, CalendarCheck2 } from 'lucide-react';
+import { Search, Bell, LogOut, Settings as SettingsIcon, Menu, ChevronDown } from 'lucide-react';
 import { ThemeToggle } from '@/components/theme/ThemeToggle';
 import { createClient } from '@/lib/supabase/client';
 
@@ -36,63 +36,70 @@ export function TopBar({ onToggleMobileMenu, dueCount = 0 }) {
     }
   };
 
+  const displayName = user?.user_metadata?.full_name || 'Sumit Patel';
+  const initial = displayName.charAt(0).toUpperCase() || 'S';
+
   return (
-    <header className="sticky top-0 z-30 flex items-center justify-between h-14 px-4 border-b border-border bg-panel/95 backdrop-blur-md">
-      {/* Left side: Mobile Toggle & Global Search */}
+    <header className="sticky top-0 z-30 flex items-center justify-between h-13 px-4 border-b border-border bg-page/95 backdrop-blur-md">
+      {/* Left side: Mobile Toggle & Search input */}
       <div className="flex items-center gap-3 flex-1 max-w-xl">
         <button
           type="button"
           onClick={onToggleMobileMenu}
-          className="md:hidden p-1.5 rounded-lg border border-border text-muted hover:text-foreground hover:bg-elevated"
+          className="md:hidden p-1.5 rounded-lg border border-border text-muted hover:text-foreground hover:bg-panel"
           aria-label="Toggle navigation menu"
         >
-          <Menu className="w-5 h-5" />
+          <Menu className="w-4 h-4" />
         </button>
 
+        {/* Global Search Bar with Ctrl K badge */}
         <button
           type="button"
           onClick={() => window.dispatchEvent(new CustomEvent('open-command-search'))}
-          className="flex items-center justify-between w-full max-w-md px-3 py-1.5 rounded-lg border border-border bg-elevated/50 hover:bg-elevated text-xs text-muted hover:text-foreground transition-colors group text-left"
+          className="flex items-center justify-between w-full max-w-md px-3.5 py-1.5 rounded-xl border border-border bg-panel/70 hover:bg-panel text-xs text-muted hover:text-foreground transition-colors group text-left"
         >
-          <div className="flex items-center gap-2">
-            <Search className="w-4 h-4 text-muted group-hover:text-accent transition-colors" />
-            <span>Search topics, patterns, notes...</span>
+          <div className="flex items-center gap-2.5">
+            <Search className="w-3.5 h-3.5 text-muted group-hover:text-accent transition-colors" />
+            <span className="text-muted/90 text-xs">Search problems, patterns, or notes...</span>
           </div>
-          <kbd className="hidden sm:inline-flex items-center px-1.5 py-0.5 rounded border border-border bg-panel text-[10px] font-mono font-medium text-muted">
+          <kbd className="hidden sm:inline-flex items-center px-1.5 py-0.5 rounded border border-border/80 bg-elevated text-[10px] font-mono text-muted">
             Ctrl K
           </kbd>
         </button>
       </div>
 
-      {/* Right side controls */}
-      <div className="flex items-center gap-2.5">
-        {/* Spaced Repetition Due Counter */}
+      {/* Right Controls */}
+      <div className="flex items-center gap-3">
+        {/* Sun / Moon Theme Toggle */}
+        <ThemeToggle />
+
+        {/* Notification Bell with indicator */}
         <Link
           href="/revision"
-          className="relative inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-border bg-elevated/40 hover:bg-elevated text-xs font-medium text-foreground transition-colors"
-          title="Daily Revision Reviews"
+          className="relative p-1.5 rounded-full text-muted hover:text-foreground transition-colors"
+          title={`${dueCount} reviews due`}
         >
-          <CalendarCheck2 className="w-4 h-4 text-amber-500" />
-          <span className="hidden sm:inline">Revision</span>
+          <Bell className="w-4 h-4" />
           {dueCount > 0 && (
-            <span className="inline-flex items-center justify-center min-w-5 h-5 px-1.5 text-[11px] font-bold rounded-full bg-accent text-accent-text">
-              {dueCount}
-            </span>
+            <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-accent animate-pulse" />
           )}
         </Link>
 
-        {/* Theme Toggle */}
-        <ThemeToggle />
-
-        {/* User Profile Menu */}
+        {/* User Profile Pill Menu */}
         <div className="relative">
           <button
             type="button"
             onClick={() => setProfileOpen(!profileOpen)}
-            className="flex items-center justify-center w-8 h-8 rounded-lg border border-border bg-elevated hover:bg-border/60 text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+            className="flex items-center gap-2 pl-1 pr-2 py-1 rounded-full hover:bg-panel transition-colors focus-visible:outline-none"
             aria-label="User account menu"
           >
-            <User className="w-4 h-4" />
+            <div className="w-7 h-7 rounded-full bg-pink-300 dark:bg-purple-300 text-purple-950 font-bold text-xs flex items-center justify-center shrink-0">
+              {initial}
+            </div>
+            <span className="hidden sm:inline text-xs font-medium text-foreground">
+              {displayName}
+            </span>
+            <ChevronDown className="w-3 h-3 text-muted" />
           </button>
 
           {profileOpen && (
@@ -101,13 +108,11 @@ export function TopBar({ onToggleMobileMenu, dueCount = 0 }) {
                 className="fixed inset-0 z-40"
                 onClick={() => setProfileOpen(false)}
               />
-              <div className="absolute right-0 mt-2 w-56 rounded-xl border border-border bg-panel shadow-xl p-1.5 z-50 text-xs animate-in fade-in slide-in-from-top-1">
+              <div className="absolute right-0 mt-2 w-56 rounded-xl border border-border bg-panel shadow-2xl p-1.5 z-50 text-xs animate-in fade-in slide-in-from-top-1">
                 <div className="px-3 py-2 border-b border-border mb-1">
-                  <p className="font-semibold text-foreground truncate">
-                    {user?.user_metadata?.full_name || 'AlgoNotes User'}
-                  </p>
+                  <p className="font-semibold text-foreground truncate">{displayName}</p>
                   <p className="text-muted text-[11px] truncate">
-                    {user?.email || 'Student Account'}
+                    {user?.email || 'sumitpatel01@gmail.com'}
                   </p>
                 </div>
 
@@ -116,7 +121,7 @@ export function TopBar({ onToggleMobileMenu, dueCount = 0 }) {
                   onClick={() => setProfileOpen(false)}
                   className="flex items-center gap-2.5 px-3 py-2 rounded-lg hover:bg-elevated text-foreground transition-colors"
                 >
-                  <SettingsIcon className="w-4 h-4 text-muted" />
+                  <SettingsIcon className="w-3.5 h-3.5 text-muted" />
                   <span>Settings & Preferences</span>
                 </Link>
 
@@ -125,7 +130,7 @@ export function TopBar({ onToggleMobileMenu, dueCount = 0 }) {
                   onClick={handleSignOut}
                   className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg hover:bg-red-500/10 text-red-500 transition-colors text-left"
                 >
-                  <LogOut className="w-4 h-4" />
+                  <LogOut className="w-3.5 h-3.5" />
                   <span>Sign out</span>
                 </button>
               </div>
