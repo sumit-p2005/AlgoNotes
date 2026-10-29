@@ -1,0 +1,79 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    --bg-page: #FAFAF8;
+    --bg-panel: #FFFFFF;
+    --bg-elevated: #F3F4F1;
+    --text-primary: #181A17;
+    --text-secondary: #565D56;
+    --text-muted: #828B82;
+    --border-color: #E2E5E0;
+    --border-strong: #CDD2CB;
+    --accent: #FACC15;
+    --accent-hover: #EAB308;
+    --accent-text: #854D0E;
+    --accent-subtle: #FEF9C3;
+  }
+
+  .dark {
+    --bg-page: #090B0A;
+    --bg-panel: #111512;
+    --bg-elevated: #171B17;
+    --text-primary: #F5F5F0;
+    --text-secondary: #A0A8A0;
+    --text-muted: #6B736B;
+    --border-color: #1F2620;
+    --border-strong: #2D372F;
+    --accent: #FACC15;
+    --accent-hover: #EAB308;
+    --accent-text: #000000;
+    --accent-subtle: #854D0E33;
+  }
+
+  * {
+    border-color: var(--border-color);
+  }
+
+  body {
+    background-color: var(--bg-page);
+    color: var(--text-primary);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    min-height: 100vh;
+  }
+}
+
+@theme {
+  --color-page: var(--bg-page);
+  --color-panel: var(--bg-panel);
+  --color-elevated: var(--bg-elevated);
+  --color-foreground: var(--text-primary);
+  --color-secondary: var(--text-secondary);
+  --color-muted: var(--text-muted);
+  --color-border: var(--border-color);
+  --color-border-strong: var(--border-strong);
+  --color-accent: var(--accent);
+  --color-accent-hover: var(--accent-hover);
+  --color-accent-text: var(--accent-text);
+  --color-accent-subtle: var(--accent-subtle);
+}
+
+/* Custom scrollbars for developer notebook panels */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border-strong);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text-muted);
+}
