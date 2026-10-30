@@ -36,11 +36,12 @@ export default function DashboardPage() {
   const loadData = async () => {
     try {
       const supabase = createClient();
-      const [{ data: user }, { data: pData }, { data: sData }, { data: hData }] =
+      const [{ data: user }, { data: pData }, { data: sData }, { data: currSData }, { data: hData }] =
         await Promise.all([
           supabase.auth.getUser(),
           supabase.from('problems').select('*').order('updated_at', { ascending: false }),
           supabase.from('problem_review_schedules').select('*'),
+          supabase.from('user_curriculum_review_schedules').select('*'),
           supabase.from('problem_review_history').select('*').order('reviewed_at', { ascending: false }),
         ]);
 
@@ -51,7 +52,7 @@ export default function DashboardPage() {
       setUserName(name);
 
       setProblems(pData || []);
-      setSchedules(sData || []);
+      setSchedules([...(sData || []), ...(currSData || [])]);
       setHistory(hData || []);
 
       // Fetch curriculum stats & onboarding status

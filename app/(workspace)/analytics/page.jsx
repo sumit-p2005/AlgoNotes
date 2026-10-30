@@ -34,20 +34,35 @@ export default function AnalyticsPage() {
           { data: tData },
           { data: patData },
           { data: hData },
+          { data: currHData },
           { data: sData },
+          { data: currSData },
         ] = await Promise.all([
           supabase.from('problems').select('*'),
           supabase.from('topics').select('*'),
           supabase.from('patterns').select('*'),
           supabase.from('problem_review_history').select('*'),
+          supabase.from('user_curriculum_review_history').select('*'),
           supabase.from('problem_review_schedules').select('*'),
+          supabase.from('user_curriculum_review_schedules').select('*'),
         ]);
+
+        const unifiedHistory = [
+          ...(hData || []),
+          ...(currHData || []).map((ch) => ({
+            ...ch,
+            rating: ch.recall_rating
+              ? ch.recall_rating.charAt(0).toUpperCase() + ch.recall_rating.slice(1).toLowerCase()
+              : 'Good',
+            reviewed_at: ch.review_date || ch.created_at,
+          })),
+        ];
 
         setProblems(pData || []);
         setTopics(tData || []);
         setPatterns(patData || []);
-        setHistory(hData || []);
-        setSchedules(sData || []);
+        setHistory(unifiedHistory);
+        setSchedules([...(sData || []), ...(currSData || [])]);
       } catch (err) {
         console.error('Analytics load error:', err);
       } finally {

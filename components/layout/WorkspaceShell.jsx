@@ -84,6 +84,14 @@ export function WorkspaceShell({ children }) {
       }
     }
     fetchStats();
+
+    const handleRevisionUpdate = () => {
+      fetchStats();
+    };
+    window.addEventListener('revision-updated', handleRevisionUpdate);
+    return () => {
+      window.removeEventListener('revision-updated', handleRevisionUpdate);
+    };
   }, [pathname]);
 
   // Show dedicated Column 2 (DSA Problems Sidebar) on Problems, Sheets, and Dashboard workspaces

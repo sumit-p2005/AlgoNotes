@@ -54,8 +54,8 @@ export function CurrentProgressWizard({
     }
     return statuses;
   });
-  // Optional revision schedule toggle
-  const [reviseExisting, setReviseExisting] = useState(true);
+  // Optional revision schedule toggle (defaults to false so new users start clean)
+  const [reviseExisting, setReviseExisting] = useState(false);
   const [revisionStartDate, setRevisionStartDate] = useState(() =>
     new Date().toISOString().split('T')[0]
   );

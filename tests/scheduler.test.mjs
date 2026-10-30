@@ -138,7 +138,7 @@ test('Revision Scheduler - Categorize Due, Overdue, and Upcoming accurately (inc
 
   const categorized = categorizeReviews(items, ref);
   assert.equal(categorized.overdue.length, 2);
-  assert.deepEqual(categorized.overdue.map((i) => i.id), ['1', '5']);
+  assert.deepEqual(categorized.overdue.map((i) => i.id), ['5', '1']); // Sorted oldest first (Oct 25 before Oct 28)
   assert.equal(categorized.dueToday.length, 2);
   assert.deepEqual(categorized.dueToday.map((i) => i.id), ['2', '4']);
   assert.equal(categorized.upcoming.length, 2);
@@ -152,4 +152,49 @@ test('Revision Scheduler - Empty list handling', () => {
   assert.equal(categorized.dueToday.length, 0);
   assert.equal(categorized.upcoming.length, 0);
   assert.equal(categorized.totalActionable, 0);
+  assert.equal(categorized.totalInSystem, 0);
+});
+
+test('Revision Scheduler - Case-insensitive recall rating input', () => {
+  const now = new Date('2026-10-30T10:00:00Z');
+  
+  // Lowercase 'forgot'
+  const resForgot = calculateNextReview({
+    rating: 'forgot',
+    currentStage: 2,
+    nowDate: now,
+  });
+  assert.equal(resForgot.nextStage, 0);
+  assert.equal(resForgot.displayStage, 1);
+  assert.equal(resForgot.intervalDays, 1);
+
+  // Mixed case 'DiffiCULt'
+  const resDiff = calculateNextReview({
+    rating: 'DiffiCULt',
+    currentStage: 1,
+    nowDate: now,
+  });
+  assert.equal(resDiff.nextStage, 1);
+  assert.equal(resDiff.displayStage, 2);
+  assert.equal(resDiff.intervalDays, 3);
+
+  // Lowercase 'good'
+  const resGood = calculateNextReview({
+    rating: 'good',
+    currentStage: 1,
+    nowDate: now,
+  });
+  assert.equal(resGood.nextStage, 2);
+  assert.equal(resGood.displayStage, 3);
+  assert.equal(resGood.intervalDays, 21);
+
+  // Uppercase 'EASY'
+  const resEasy = calculateNextReview({
+    rating: 'EASY',
+    currentStage: 0,
+    nowDate: now,
+  });
+  assert.equal(resEasy.nextStage, 2);
+  assert.equal(resEasy.displayStage, 3);
+  assert.equal(resEasy.intervalDays, 21);
 });
