@@ -2,35 +2,40 @@
 
 @layer base {
   :root {
+    /* Light Mode Palette: warm off-white workspace, distinct soft-grey sidebars, crisp white cards */
     --bg-page: #FAFAF8;
+    --bg-sidebar: #F1F2EF;
+    --bg-sidebar-secondary: #F4F3EF;
     --bg-panel: #FFFFFF;
     --bg-surface: #FFFFFF;
-    --bg-elevated: #F3F4F1;
     --bg-card: #FFFFFF;
-    --text-primary: #111827;
-    --text-secondary: #4B5563;
-    --text-muted: #8E968E;
-    --border-color: #E2E5E0;
-    --border-strong: #CDD2CB;
-    --accent: #FACC15;
-    --accent-hover: #EAB308;
+    --bg-elevated: #EAECE8;
+    --text-primary: #171717;
+    --text-secondary: #4B524E;
+    --text-muted: #6B716D;
+    --border-color: #E2E4E0;
+    --border-strong: #CDD0CA;
+    --accent: #E5A900;
+    --accent-hover: #D49A00;
     --accent-text: #000000;
-    --accent-subtle: #FEF9C3;
-    --accent-glow: #FACC1526;
+    --accent-subtle: #FEF3C7;
+    --accent-glow: #E5A90026;
   }
 
   .dark {
-    /* Pure Black & Near-Black Palette matching reference */
-    --bg-page: #000000;
-    --bg-panel: #0A0D0B;
-    --bg-surface: #0E1210;
-    --bg-elevated: #131714;
-    --bg-card: #0A0D0B;
-    --text-primary: #FFFFFF;
-    --text-secondary: #B0B8B0;
-    --text-muted: #667066;
-    --border-color: #19201B;
-    --border-strong: #242D26;
+    /* Dark Mode Palette: pure black workspace (#050505), charcoal sidebar (#101010), secondary panel (#151515), dark card (#101210) */
+    --bg-page: #050505;
+    --bg-sidebar: #101010;
+    --bg-sidebar-secondary: #151515;
+    --bg-panel: #121412;
+    --bg-surface: #121412;
+    --bg-card: #101210;
+    --bg-elevated: #171B17;
+    --text-primary: #F5F5F0;
+    --text-secondary: #A3ACA3;
+    --text-muted: #788278;
+    --border-color: #252525;
+    --border-strong: #333833;
     --accent: #FACC15;
     --accent-hover: #EAB308;
     --accent-text: #000000;
@@ -53,6 +58,8 @@
 
 @theme {
   --color-page: var(--bg-page);
+  --color-sidebar: var(--bg-sidebar);
+  --color-sidebar-secondary: var(--bg-sidebar-secondary);
   --color-panel: var(--bg-panel);
   --color-surface: var(--bg-surface);
   --color-elevated: var(--bg-elevated);

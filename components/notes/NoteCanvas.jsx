@@ -273,45 +273,33 @@ export function NoteCanvas({
         <div className="h-[1px] w-full bg-border/60" />
 
         {/* Blocks Container */}
-        <div className="space-y-2">
+        <div className="space-y-3 min-h-[200px]">
           {blocks.length === 0 ? (
-            <div className="py-12 px-6 rounded-2xl border border-dashed border-border/80 bg-panel/30 text-center space-y-4">
-              <div className="w-10 h-10 rounded-xl bg-accent/10 border border-accent/20 flex items-center justify-center text-accent mx-auto">
-                <Plus className="w-5 h-5" />
-              </div>
-              <div className="space-y-1">
-                <h4 className="text-sm font-bold text-foreground">Blank Document Canvas</h4>
-                <p className="text-xs text-muted max-w-sm mx-auto">
-                  Click any block type below to insert headings, formatted text, syntax-highlighted code, or images.
-                </p>
-              </div>
-
-              <div className="max-w-xl mx-auto pt-2">
-                <BlockInsertionToolbar onInsertBlock={handleAppendBlock} />
-              </div>
+            <div className="py-10 px-4 text-center space-y-2 select-none">
+              <p className="text-xs text-muted/80">
+                This document is blank. Start by clicking any block below.
+              </p>
             </div>
           ) : (
-            <>
-              {blocks.map((block, idx) => (
-                <BlockItem
-                  key={block.id || `b-${idx}`}
-                  block={block}
-                  index={idx}
-                  totalBlocks={blocks.length}
-                  onUpdateContent={handleUpdateContent}
-                  onDeleteBlock={handleDeleteBlock}
-                  onDuplicateBlock={handleDuplicateBlock}
-                  onMoveBlock={handleMoveBlock}
-                  onInsertBelow={handleInsertBelow}
-                />
-              ))}
-
-              {/* Bottom Insertion Toolbar */}
-              <div className="pt-6 pb-12">
-                <BlockInsertionToolbar onInsertBlock={handleAppendBlock} />
-              </div>
-            </>
+            blocks.map((block, idx) => (
+              <BlockItem
+                key={block.id || `b-${idx}`}
+                block={block}
+                index={idx}
+                totalBlocks={blocks.length}
+                onUpdateContent={handleUpdateContent}
+                onDeleteBlock={handleDeleteBlock}
+                onDuplicateBlock={handleDuplicateBlock}
+                onMoveBlock={handleMoveBlock}
+                onInsertBelow={handleInsertBelow}
+              />
+            ))
           )}
+        </div>
+
+        {/* Docked Compact Bottom Insertion Toolbar */}
+        <div className="sticky bottom-4 pt-4 pb-2">
+          <BlockInsertionToolbar onInsertBlock={handleAppendBlock} isDocked />
         </div>
       </div>
     </main>

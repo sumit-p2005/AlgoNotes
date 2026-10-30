@@ -18,15 +18,17 @@ import { createClient } from '@/lib/supabase/client';
 import { Button } from '@/components/ui/Button';
 import { categorizeReviews } from '@/lib/revision/scheduler';
 import { CurrentProgressWizard } from '@/components/onboarding/CurrentProgressWizard';
+import { calculateStreak } from '@/lib/revision/activity';
 
 export default function DashboardPage() {
   const [problems, setProblems] = useState([]);
   const [schedules, setSchedules] = useState([]);
   const [history, setHistory] = useState([]);
-  const [userName, setUserName] = useState('Sumit Patel');
+  const [userName, setUserName] = useState('');
   const [curriculumData, setCurriculumData] = useState(null);
   const [showOnboardingModal, setShowOnboardingModal] = useState(false);
   const [hasCompletedOnboarding, setHasCompletedOnboarding] = useState(true);
+  const [allTimestamps, setAllTimestamps] = useState([]);
   const [loading, setLoading] = useState(true);
 
   const [todayStr] = useState(() => new Date().toISOString().split('T')[0]);
@@ -42,9 +44,12 @@ export default function DashboardPage() {
           supabase.from('problem_review_history').select('*').order('reviewed_at', { ascending: false }),
         ]);
 
-      if (user?.user?.user_metadata?.full_name) {
-        setUserName(user.user.user_metadata.full_name);
-      }
+      const name =
+        user?.user?.user_metadata?.full_name ||
+        user?.user?.email?.split('@')[0] ||
+        'Learner';
+      setUserName(name);
+
       setProblems(pData || []);
       setSchedules(sData || []);
       setHistory(hData || []);
@@ -63,6 +68,28 @@ export default function DashboardPage() {
       if (onbRes.ok) {
         const oData = await onbRes.json();
         setHasCompletedOnboarding(!!oData.completedOnboarding);
+      }
+
+      // Fetch all activity timestamps for deterministic streak calculation
+      if (user?.user?.id) {
+        const [
+          { data: actEvents },
+          { data: currHistory },
+          { data: currProgress },
+        ] = await Promise.all([
+          supabase.from('activity_events').select('created_at').eq('user_id', user.user.id).limit(100),
+          supabase.from('user_curriculum_review_history').select('reviewed_at').eq('user_id', user.user.id).limit(100),
+          supabase.from('user_curriculum_progress').select('last_activity_at').eq('user_id', user.user.id).limit(100),
+        ]);
+
+        const timestamps = [
+          ...(hData || []).map((h) => h.reviewed_at),
+          ...(actEvents || []).map((e) => e.created_at),
+          ...(currHistory || []).map((h) => h.reviewed_at),
+          ...(currProgress || []).map((p) => p.last_activity_at),
+        ].filter(Boolean);
+
+        setAllTimestamps(timestamps);
       }
     } catch (err) {
       console.error('Dashboard load error:', err);
@@ -84,32 +111,7 @@ export default function DashboardPage() {
     const solvedCount = problems.filter((p) => p.status === 'Solved').length;
     const cat = categorizeReviews(schedules);
     const dueCount = cat.totalActionable;
-
-    // Consecutive streak calculation from real review history dates
-    const reviewDates = history.map((h) => h.reviewed_at?.split('T')[0]).filter(Boolean);
-    const uniqueDays = Array.from(new Set(reviewDates)).sort().reverse();
-
-    let streak = 0;
-    if (uniqueDays.length > 0) {
-      const yesterdayDate = new Date(todayStr);
-      yesterdayDate.setDate(yesterdayDate.getDate() - 1);
-      const yesterdayStr = yesterdayDate.toISOString().split('T')[0];
-
-      if (uniqueDays[0] === todayStr || uniqueDays[0] === yesterdayStr) {
-        streak = 1;
-        let curr = new Date(uniqueDays[0]);
-        for (let i = 1; i < uniqueDays.length; i++) {
-          const prev = new Date(uniqueDays[i]);
-          const diffDays = Math.round((curr - prev) / (1000 * 3600 * 24));
-          if (diffDays === 1) {
-            streak++;
-            curr = prev;
-          } else {
-            break;
-          }
-        }
-      }
-    }
+    const streak = calculateStreak(allTimestamps);
 
     return {
       totalProblems,
@@ -117,7 +119,7 @@ export default function DashboardPage() {
       dueCount,
       streak,
     };
-  }, [problems, schedules, history, todayStr]);
+  }, [problems, schedules, allTimestamps]);
 
   const recentProblems = useMemo(() => {
     return problems.slice(0, 5);
@@ -129,6 +131,9 @@ export default function DashboardPage() {
     completionPercent: 0,
     totalTopicsStudied: 0,
   };
+
+  const hour = new Date().getHours();
+  const greeting = hour < 12 ? 'Good Morning' : hour < 18 ? 'Good Afternoon' : 'Good Evening';
 
   return (
     <div className="flex-1 p-4 sm:p-6 lg:p-8 space-y-6 max-w-7xl w-full mx-auto overflow-y-auto">
@@ -147,7 +152,7 @@ export default function DashboardPage() {
       {/* Top Greeting Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <span className="text-xs text-muted">Good Evening</span>
+          <span className="text-xs text-muted">{greeting}</span>
           <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground flex items-center gap-2">
             <span>{userName}</span>
             <span className="text-xl">👋</span>
@@ -175,10 +180,10 @@ export default function DashboardPage() {
 
       {/* New User Onboarding Callout Banner (if onboarding not completed) */}
       {!hasCompletedOnboarding && (
-        <div className="p-5 rounded-2xl border border-amber-400/40 bg-gradient-to-r from-amber-400/15 via-[#0E120F] to-[#0A0D0B] flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-lg animate-fade-in">
+        <div className="p-5 rounded-2xl border border-amber-400/30 bg-amber-400/5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-sm animate-fade-in">
           <div className="space-y-1">
             <div className="flex items-center gap-2">
-              <span className="px-2 py-0.5 rounded-full bg-amber-400 text-black text-[10px] font-black uppercase">
+              <span className="px-2 py-0.5 rounded-full bg-accent text-accent-text text-[10px] font-black uppercase">
                 Welcome Onboarding
               </span>
               <span className="text-xs font-bold text-amber-400">
@@ -205,28 +210,28 @@ export default function DashboardPage() {
 
       {/* 4 KPI Metrics Grid */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3.5">
-        <div className="p-4 rounded-2xl border border-border bg-panel">
+        <div className="p-4 rounded-2xl border border-border bg-card shadow-xs">
           <span className="text-2xl sm:text-3xl font-bold text-foreground block">
             {metrics.solvedCount}
           </span>
           <span className="text-xs text-muted block mt-1">Problems Solved</span>
         </div>
 
-        <div className="p-4 rounded-2xl border border-border bg-panel">
+        <div className="p-4 rounded-2xl border border-border bg-card shadow-xs">
           <span className="text-2xl sm:text-3xl font-bold text-amber-400 block">
             {metrics.dueCount}
           </span>
           <span className="text-xs text-muted block mt-1">Due Today</span>
         </div>
 
-        <div className="p-4 rounded-2xl border border-border bg-panel">
+        <div className="p-4 rounded-2xl border border-border bg-card shadow-xs">
           <span className="text-2xl sm:text-3xl font-bold text-foreground block">
             {metrics.totalProblems}
           </span>
           <span className="text-xs text-muted block mt-1">Custom Notes</span>
         </div>
 
-        <div className="p-4 rounded-2xl border border-border bg-panel">
+        <div className="p-4 rounded-2xl border border-border bg-card shadow-xs">
           <div className="flex items-center gap-1.5">
             <span className="text-2xl sm:text-3xl font-bold text-foreground">
               {metrics.streak}
@@ -238,10 +243,10 @@ export default function DashboardPage() {
       </div>
 
       {/* Preinstalled Striver A2Z DSA Sheet Card */}
-      <div className="p-5 rounded-2xl border border-[#232924] bg-gradient-to-r from-[#0E120F] to-[#0A0D0B] flex flex-col md:flex-row md:items-center justify-between gap-5 shadow-md">
+      <div className="p-5 rounded-2xl border border-border bg-card flex flex-col md:flex-row md:items-center justify-between gap-5 shadow-xs">
         <div className="space-y-2 flex-1">
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-amber-400 text-black flex items-center justify-center font-black text-xs shadow-sm">
+            <div className="w-8 h-8 rounded-lg bg-accent text-accent-text flex items-center justify-center font-black text-xs shadow-sm">
               A2Z
             </div>
             <div>
@@ -255,7 +260,7 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          <div className="w-full max-w-md h-2 rounded-full bg-[#181D19] overflow-hidden">
+          <div className="w-full max-w-md h-2 rounded-full bg-border overflow-hidden">
             <div
               className="h-full bg-gradient-to-r from-amber-500 to-amber-300 rounded-full transition-all duration-500"
               style={{ width: `${Math.min(100, Math.max(currStats.completionPercent, 2))}%` }}
@@ -266,7 +271,7 @@ export default function DashboardPage() {
         <div className="flex items-center gap-2 shrink-0">
           <Link
             href="/sheets/striver-a2z"
-            className="px-4 py-2 rounded-xl bg-amber-400 hover:bg-amber-300 text-black font-bold text-xs flex items-center gap-1.5 transition-colors cursor-pointer"
+            className="px-4 py-2 rounded-xl bg-accent hover:bg-accent-hover text-accent-text font-bold text-xs flex items-center gap-1.5 transition-colors cursor-pointer shadow-xs"
           >
             <span>Open Sheet</span>
             <ChevronRight className="w-4 h-4" />

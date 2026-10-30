@@ -36,8 +36,11 @@ export function TopBar({ onToggleMobileMenu, dueCount = 0 }) {
     }
   };
 
-  const displayName = user?.user_metadata?.full_name || 'Sumit Patel';
-  const initial = displayName.charAt(0).toUpperCase() || 'S';
+  const displayName =
+    user?.user_metadata?.full_name ||
+    user?.email?.split('@')[0] ||
+    'Learner';
+  const initial = displayName.charAt(0).toUpperCase() || 'L';
 
   return (
     <header className="sticky top-0 z-30 flex items-center justify-between h-13 px-4 border-b border-border bg-page/95 backdrop-blur-md">

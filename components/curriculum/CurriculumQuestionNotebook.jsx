@@ -162,11 +162,11 @@ export function CurriculumQuestionNotebook({
   };
 
   return (
-    <div className="flex-1 flex flex-col min-w-0 bg-[#000000] text-[#F5F5F0] overflow-y-auto">
+    <div className="flex-1 flex flex-col min-w-0 bg-page text-foreground overflow-y-auto">
       <div className="max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8 space-y-6">
 
         {/* Top Header: Breadcrumbs & Adjacent Navigation */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#1C221D] pb-5">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-border pb-5">
           <div className="space-y-1.5">
             <div className="flex items-center gap-2 text-xs text-muted flex-wrap">
               <Link href="/sheets" className="hover:text-foreground transition-colors">
@@ -225,7 +225,7 @@ export function CurriculumQuestionNotebook({
           {/* Right Header Controls: Status, Adjacent Problems & Autosave Indicator */}
           <div className="flex items-center gap-3 flex-wrap">
             {/* Autosave Status Pill */}
-            <div className="flex items-center gap-1.5 text-xs text-muted px-2.5 py-1 rounded-lg bg-[#0E120F] border border-[#1C221D]">
+            <div className="flex items-center gap-1.5 text-xs text-muted px-2.5 py-1 rounded-lg bg-panel border border-border">
               {saveStatus === 'saving' && (
                 <>
                   <RotateCcw className="w-3.5 h-3.5 animate-spin text-amber-400" />
@@ -264,7 +264,7 @@ export function CurriculumQuestionNotebook({
                   ? 'bg-blue-500/15 border-blue-500/40 text-blue-400'
                   : status === 'Needs revision'
                   ? 'bg-amber-400/15 border-amber-400/40 text-amber-400'
-                  : 'bg-[#141815] border-border text-muted hover:text-foreground'
+                  : 'bg-panel border-border text-muted hover:text-foreground'
               )}
             >
               <option value="Not started">Not started</option>
@@ -277,30 +277,30 @@ export function CurriculumQuestionNotebook({
             <button
               type="button"
               onClick={saveAll}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-accent text-accent-text hover:bg-accent-hover text-xs font-bold transition-all cursor-pointer"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-accent text-accent-text hover:bg-accent-hover text-xs font-bold transition-all cursor-pointer shadow-xs"
             >
               <Save className="w-3.5 h-3.5" />
               <span>Save</span>
             </button>
 
             {/* Adjacent Navigation Buttons */}
-            <div className="flex items-center border border-[#1C221D] rounded-xl overflow-hidden bg-[#0A0D0B]">
+            <div className="flex items-center border border-border rounded-xl overflow-hidden bg-card">
               <button
                 type="button"
                 disabled={!prevProblem}
                 onClick={() => prevProblem && router.push(`/sheets/striver-a2z/${prevProblem.id}`)}
-                className="p-1.5 text-muted hover:text-foreground hover:bg-[#141815] disabled:opacity-30 disabled:hover:bg-transparent transition-colors cursor-pointer"
+                className="p-1.5 text-muted hover:text-foreground hover:bg-elevated disabled:opacity-30 disabled:hover:bg-transparent transition-colors cursor-pointer"
                 title={prevProblem ? `Previous: #${prevProblem.problem_number} ${prevProblem.title}` : 'No previous problem'}
                 aria-label={prevProblem ? `Previous problem: #${prevProblem.problem_number} ${prevProblem.title}` : 'No previous problem'}
               >
                 <ChevronLeft className="w-4 h-4" />
               </button>
-              <div className="h-4 w-[1px] bg-[#1C221D]" />
+              <div className="h-4 w-[1px] bg-border" />
               <button
                 type="button"
                 disabled={!nextProblem}
                 onClick={() => nextProblem && router.push(`/sheets/striver-a2z/${nextProblem.id}`)}
-                className="p-1.5 text-muted hover:text-foreground hover:bg-[#141815] disabled:opacity-30 disabled:hover:bg-transparent transition-colors cursor-pointer"
+                className="p-1.5 text-muted hover:text-foreground hover:bg-elevated disabled:opacity-30 disabled:hover:bg-transparent transition-colors cursor-pointer"
                 title={nextProblem ? `Next: #${nextProblem.problem_number} ${nextProblem.title}` : 'No next problem'}
                 aria-label={nextProblem ? `Next problem: #${nextProblem.problem_number} ${nextProblem.title}` : 'No next problem'}
               >
@@ -317,7 +317,7 @@ export function CurriculumQuestionNotebook({
           <div className="lg:col-span-8 space-y-6">
 
             {/* Workspace Tab Bar */}
-            <div className="flex items-center gap-1 border-b border-[#1C221D] pb-2 text-xs">
+            <div className="flex items-center gap-1 border-b border-border pb-2 text-xs">
               {[
                 { id: 'notes', label: 'Notes & Intuition' },
                 { id: 'code', label: 'Solution Code' },
@@ -331,7 +331,7 @@ export function CurriculumQuestionNotebook({
                     'px-3 py-1.5 rounded-lg font-semibold transition-colors cursor-pointer',
                     activeTab === tab.id
                       ? 'bg-amber-400/10 text-amber-400 border border-amber-400/20'
-                      : 'text-muted hover:text-foreground hover:bg-[#0E120F]'
+                      : 'text-muted hover:text-foreground hover:bg-panel'
                   )}
                 >
                   {tab.label}
@@ -343,7 +343,7 @@ export function CurriculumQuestionNotebook({
             {activeTab === 'notes' && (
               <div className="space-y-4">
                 {/* Pattern Recognition Card */}
-                <div className="p-4 rounded-xl border border-[#1C221D] bg-[#0A0D0B] space-y-3">
+                <div className="p-4 rounded-xl border border-border bg-card space-y-3">
                   <div className="flex items-center gap-2 text-xs font-bold text-amber-400">
                     <Target className="w-4 h-4" />
                     <span>Pattern Used & Recognition Clues</span>
@@ -358,7 +358,7 @@ export function CurriculumQuestionNotebook({
                         placeholder="e.g. Two Pointers"
                         value={notesData.pattern_used}
                         onChange={(e) => handleFieldChange('pattern_used', e.target.value)}
-                        className="w-full px-3 py-1.5 rounded-lg bg-[#0E120F] border border-[#1C221D] text-xs text-foreground placeholder:text-muted focus:outline-none focus:border-amber-400"
+                        className="w-full px-3 py-1.5 rounded-lg bg-panel border border-border text-xs text-foreground placeholder:text-muted focus:outline-none focus:border-amber-400"
                       />
                     </div>
                     <div>
@@ -370,14 +370,14 @@ export function CurriculumQuestionNotebook({
                         placeholder="When sorted array + pair sum, use two pointers..."
                         value={notesData.pattern_cues}
                         onChange={(e) => handleFieldChange('pattern_cues', e.target.value)}
-                        className="w-full px-3 py-1.5 rounded-lg bg-[#0E120F] border border-[#1C221D] text-xs text-foreground placeholder:text-muted focus:outline-none focus:border-amber-400"
+                        className="w-full px-3 py-1.5 rounded-lg bg-panel border border-border text-xs text-foreground placeholder:text-muted focus:outline-none focus:border-amber-400"
                       />
                     </div>
                   </div>
                 </div>
 
                 {/* Key Points To Remember */}
-                <div className="p-4 rounded-xl border border-[#1C221D] bg-[#0A0D0B] space-y-2">
+                <div className="p-4 rounded-xl border border-border bg-card space-y-2">
                   <div className="flex items-center gap-2 text-xs font-bold text-amber-400">
                     <Lightbulb className="w-4 h-4" />
                     <span>Key Points to Remember</span>
@@ -387,12 +387,12 @@ export function CurriculumQuestionNotebook({
                     placeholder="Bullet points or mental anchors to remember while coding..."
                     value={notesData.key_points}
                     onChange={(e) => handleFieldChange('key_points', e.target.value)}
-                    className="w-full p-3 rounded-lg bg-[#0E120F] border border-[#1C221D] text-xs text-foreground placeholder:text-muted focus:outline-none focus:border-amber-400 resize-y leading-relaxed"
+                    className="w-full p-3 rounded-lg bg-panel border border-border text-xs text-foreground placeholder:text-muted focus:outline-none focus:border-amber-400 resize-y leading-relaxed"
                   />
                 </div>
 
                 {/* Personal Notes (Markdown / Textarea) */}
-                <div className="p-4 rounded-xl border border-[#1C221D] bg-[#0A0D0B] space-y-2">
+                <div className="p-4 rounded-xl border border-border bg-card space-y-2">
                   <div className="flex items-center justify-between text-xs font-bold text-foreground">
                     <div className="flex items-center gap-2">
                       <FileText className="w-4 h-4 text-amber-400" />
@@ -405,7 +405,7 @@ export function CurriculumQuestionNotebook({
                     placeholder="Document your own understanding, aha moments, intuition, or walkthrough in plain text or Markdown..."
                     value={notesData.personal_notes}
                     onChange={(e) => handleFieldChange('personal_notes', e.target.value)}
-                    className="w-full p-3 rounded-lg bg-[#0E120F] border border-[#1C221D] text-xs text-foreground placeholder:text-muted focus:outline-none focus:border-amber-400 resize-y leading-relaxed font-mono"
+                    className="w-full p-3 rounded-lg bg-panel border border-border text-xs text-foreground placeholder:text-muted focus:outline-none focus:border-amber-400 resize-y leading-relaxed font-mono"
                   />
                 </div>
               </div>
@@ -414,7 +414,7 @@ export function CurriculumQuestionNotebook({
             {/* TAB 2: SOLUTION CODE */}
             {activeTab === 'code' && (
               <div className="space-y-4">
-                <div className="rounded-xl border border-[#1C221D] bg-[#0A0D0B] overflow-hidden">
+                <div className="rounded-xl border border-border bg-card overflow-hidden">
                   <CodeEditor
                     value={notesData.code}
                     onChange={(val) => handleFieldChange('code', val)}
@@ -430,7 +430,7 @@ export function CurriculumQuestionNotebook({
             {activeTab === 'approach' && (
               <div className="space-y-4">
                 {/* Brute Force Approach */}
-                <div className="p-4 rounded-xl border border-[#1C221D] bg-[#0A0D0B] space-y-2">
+                <div className="p-4 rounded-xl border border-border bg-card space-y-2">
                   <div className="text-xs font-bold text-foreground">
                     1. Brute-Force Approach
                   </div>
@@ -439,12 +439,12 @@ export function CurriculumQuestionNotebook({
                     placeholder="Explain the initial straightforward or naive approach..."
                     value={notesData.brute_force_approach}
                     onChange={(e) => handleFieldChange('brute_force_approach', e.target.value)}
-                    className="w-full p-3 rounded-lg bg-[#0E120F] border border-[#1C221D] text-xs text-foreground placeholder:text-muted focus:outline-none focus:border-amber-400 resize-y leading-relaxed"
+                    className="w-full p-3 rounded-lg bg-panel border border-border text-xs text-foreground placeholder:text-muted focus:outline-none focus:border-amber-400 resize-y leading-relaxed"
                   />
                 </div>
 
                 {/* Optimised Approach & Intuition */}
-                <div className="p-4 rounded-xl border border-[#1C221D] bg-[#0A0D0B] space-y-2">
+                <div className="p-4 rounded-xl border border-border bg-card space-y-2">
                   <div className="text-xs font-bold text-amber-400">
                     2. Optimised Approach & Intuition
                   </div>
@@ -453,7 +453,7 @@ export function CurriculumQuestionNotebook({
                     placeholder="Why does this optimization work? What was the reduction in duplicate work?..."
                     value={notesData.optimized_approach}
                     onChange={(e) => handleFieldChange('optimized_approach', e.target.value)}
-                    className="w-full p-3 rounded-lg bg-[#0E120F] border border-[#1C221D] text-xs text-foreground placeholder:text-muted focus:outline-none focus:border-amber-400 resize-y leading-relaxed"
+                    className="w-full p-3 rounded-lg bg-panel border border-border text-xs text-foreground placeholder:text-muted focus:outline-none focus:border-amber-400 resize-y leading-relaxed"
                   />
                 </div>
               </div>
@@ -463,7 +463,7 @@ export function CurriculumQuestionNotebook({
             {activeTab === 'complexity' && (
               <div className="space-y-4">
                 {/* Time & Space Complexity */}
-                <div className="p-4 rounded-xl border border-[#1C221D] bg-[#0A0D0B] space-y-3">
+                <div className="p-4 rounded-xl border border-border bg-card space-y-3">
                   <div className="text-xs font-bold text-foreground">
                     Complexity Analysis
                   </div>
@@ -477,7 +477,7 @@ export function CurriculumQuestionNotebook({
                         placeholder="e.g. O(N log N)"
                         value={notesData.time_complexity}
                         onChange={(e) => handleFieldChange('time_complexity', e.target.value)}
-                        className="w-full px-3 py-1.5 rounded-lg bg-[#0E120F] border border-[#1C221D] text-xs text-foreground font-mono focus:outline-none focus:border-amber-400"
+                        className="w-full px-3 py-1.5 rounded-lg bg-panel border border-border text-xs text-foreground font-mono focus:outline-none focus:border-amber-400"
                       />
                       <div className="flex items-center gap-1.5 mt-2 flex-wrap">
                         {['O(1)', 'O(log N)', 'O(N)', 'O(N log N)', 'O(N^2)'].map((c) => (
@@ -485,7 +485,7 @@ export function CurriculumQuestionNotebook({
                             key={c}
                             type="button"
                             onClick={() => handleFieldChange('time_complexity', c)}
-                            className="px-2 py-0.5 rounded text-[10px] bg-[#141815] text-muted hover:text-foreground border border-border"
+                            className="px-2 py-0.5 rounded text-[10px] bg-panel text-muted hover:text-foreground border border-border"
                           >
                             {c}
                           </button>
@@ -502,7 +502,7 @@ export function CurriculumQuestionNotebook({
                         placeholder="e.g. O(1)"
                         value={notesData.space_complexity}
                         onChange={(e) => handleFieldChange('space_complexity', e.target.value)}
-                        className="w-full px-3 py-1.5 rounded-lg bg-[#0E120F] border border-[#1C221D] text-xs text-foreground font-mono focus:outline-none focus:border-amber-400"
+                        className="w-full px-3 py-1.5 rounded-lg bg-panel border border-border text-xs text-foreground font-mono focus:outline-none focus:border-amber-400"
                       />
                       <div className="flex items-center gap-1.5 mt-2 flex-wrap">
                         {['O(1)', 'O(log N)', 'O(N)', 'O(N^2)'].map((c) => (
@@ -510,7 +510,7 @@ export function CurriculumQuestionNotebook({
                             key={c}
                             type="button"
                             onClick={() => handleFieldChange('space_complexity', c)}
-                            className="px-2 py-0.5 rounded text-[10px] bg-[#141815] text-muted hover:text-foreground border border-border"
+                            className="px-2 py-0.5 rounded text-[10px] bg-panel text-muted hover:text-foreground border border-border"
                           >
                             {c}
                           </button>
@@ -522,7 +522,7 @@ export function CurriculumQuestionNotebook({
 
                 {/* Common Mistakes & Edge Cases */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div className="p-4 rounded-xl border border-[#1C221D] bg-[#0A0D0B] space-y-2">
+                  <div className="p-4 rounded-xl border border-border bg-card space-y-2">
                     <div className="flex items-center gap-2 text-xs font-bold text-rose-400">
                       <AlertTriangle className="w-4 h-4" />
                       <span>Common Mistakes</span>
@@ -532,11 +532,11 @@ export function CurriculumQuestionNotebook({
                       placeholder="e.g. Off-by-one error, forgetting to check for negative numbers..."
                       value={notesData.mistakes}
                       onChange={(e) => handleFieldChange('mistakes', e.target.value)}
-                      className="w-full p-3 rounded-lg bg-[#0E120F] border border-[#1C221D] text-xs text-foreground placeholder:text-muted focus:outline-none focus:border-amber-400 resize-y leading-relaxed"
+                      className="w-full p-3 rounded-lg bg-panel border border-border text-xs text-foreground placeholder:text-muted focus:outline-none focus:border-amber-400 resize-y leading-relaxed"
                     />
                   </div>
 
-                  <div className="p-4 rounded-xl border border-[#1C221D] bg-[#0A0D0B] space-y-2">
+                  <div className="p-4 rounded-xl border border-border bg-card space-y-2">
                     <div className="flex items-center gap-2 text-xs font-bold text-amber-400">
                       <Target className="w-4 h-4" />
                       <span>Edge Cases</span>
@@ -546,7 +546,7 @@ export function CurriculumQuestionNotebook({
                       placeholder="e.g. Empty array, single element, duplicates, integer overflow..."
                       value={notesData.edge_cases}
                       onChange={(e) => handleFieldChange('edge_cases', e.target.value)}
-                      className="w-full p-3 rounded-lg bg-[#0E120F] border border-[#1C221D] text-xs text-foreground placeholder:text-muted focus:outline-none focus:border-amber-400 resize-y leading-relaxed"
+                      className="w-full p-3 rounded-lg bg-panel border border-border text-xs text-foreground placeholder:text-muted focus:outline-none focus:border-amber-400 resize-y leading-relaxed"
                     />
                   </div>
                 </div>
@@ -558,8 +558,8 @@ export function CurriculumQuestionNotebook({
           <div className="lg:col-span-4 space-y-5">
 
             {/* Spaced Repetition Card */}
-            <div className="p-4 rounded-xl border border-[#1C221D] bg-[#0A0D0B] space-y-4 shadow-md">
-              <div className="flex items-center justify-between border-b border-[#1C221D] pb-3">
+            <div className="p-4 rounded-xl border border-border bg-card space-y-4 shadow-sm">
+              <div className="flex items-center justify-between border-b border-border pb-3">
                 <div className="flex items-center gap-2">
                   <Calendar className="w-4 h-4 text-amber-400" />
                   <span className="text-xs font-bold text-foreground">Revision Schedule</span>
@@ -571,13 +571,13 @@ export function CurriculumQuestionNotebook({
 
               {/* Next Review Date & Interval */}
               <div className="grid grid-cols-2 gap-2 text-center">
-                <div className="p-2.5 rounded-lg bg-[#0E120F] border border-[#171B17]">
+                <div className="p-2.5 rounded-lg bg-panel border border-border">
                   <div className="text-[10px] text-muted">Next Review</div>
                   <div className="text-xs font-bold text-foreground mt-0.5">
                     {schedule.next_review_date || 'Today'}
                   </div>
                 </div>
-                <div className="p-2.5 rounded-lg bg-[#0E120F] border border-[#171B17]">
+                <div className="p-2.5 rounded-lg bg-panel border border-border">
                   <div className="text-[10px] text-muted">Interval</div>
                   <div className="text-xs font-bold text-amber-400 mt-0.5">
                     {schedule.interval_days || 1} day(s)
@@ -594,28 +594,28 @@ export function CurriculumQuestionNotebook({
                   <button
                     type="button"
                     onClick={() => handleRateRecall('forgot')}
-                    className="p-2 rounded-lg bg-[#0E120F] hover:bg-rose-500/15 border border-[#1C221D] hover:border-rose-500/40 text-xs font-semibold text-rose-400 transition-colors cursor-pointer text-center"
+                    className="p-2 rounded-lg bg-panel hover:bg-rose-500/15 border border-border hover:border-rose-500/40 text-xs font-semibold text-rose-400 transition-colors cursor-pointer text-center"
                   >
                     Forgot (Day 1)
                   </button>
                   <button
                     type="button"
                     onClick={() => handleRateRecall('difficult')}
-                    className="p-2 rounded-lg bg-[#0E120F] hover:bg-amber-500/15 border border-[#1C221D] hover:border-amber-500/40 text-xs font-semibold text-amber-400 transition-colors cursor-pointer text-center"
+                    className="p-2 rounded-lg bg-panel hover:bg-amber-500/15 border border-border hover:border-amber-500/40 text-xs font-semibold text-amber-400 transition-colors cursor-pointer text-center"
                   >
                     Difficult (+3d)
                   </button>
                   <button
                     type="button"
                     onClick={() => handleRateRecall('good')}
-                    className="p-2 rounded-lg bg-[#0E120F] hover:bg-emerald-500/15 border border-[#1C221D] hover:border-emerald-500/40 text-xs font-semibold text-emerald-400 transition-colors cursor-pointer text-center"
+                    className="p-2 rounded-lg bg-panel hover:bg-emerald-500/15 border border-border hover:border-emerald-500/40 text-xs font-semibold text-emerald-400 transition-colors cursor-pointer text-center"
                   >
                     Good (+7d)
                   </button>
                   <button
                     type="button"
                     onClick={() => handleRateRecall('easy')}
-                    className="p-2 rounded-lg bg-[#0E120F] hover:bg-sky-500/15 border border-[#1C221D] hover:border-sky-500/40 text-xs font-semibold text-sky-400 transition-colors cursor-pointer text-center"
+                    className="p-2 rounded-lg bg-panel hover:bg-sky-500/15 border border-border hover:border-sky-500/40 text-xs font-semibold text-sky-400 transition-colors cursor-pointer text-center"
                   >
                     Easy (+14d)
                   </button>
@@ -624,7 +624,7 @@ export function CurriculumQuestionNotebook({
             </div>
 
             {/* Confidence Rating Card */}
-            <div className="p-4 rounded-xl border border-[#1C221D] bg-[#0A0D0B] space-y-2.5">
+            <div className="p-4 rounded-xl border border-border bg-card space-y-2.5 shadow-sm">
               <div className="text-xs font-bold text-foreground">
                 Confidence Level
               </div>
@@ -654,20 +654,20 @@ export function CurriculumQuestionNotebook({
             </div>
 
             {/* Curriculum Info Card */}
-            <div className="p-4 rounded-xl border border-[#1C221D] bg-[#0A0D0B] space-y-3">
+            <div className="p-4 rounded-xl border border-border bg-card space-y-3 shadow-sm">
               <div className="text-xs font-bold text-foreground">
                 Curriculum Details
               </div>
               <div className="space-y-2 text-xs">
-                <div className="flex justify-between py-1 border-b border-[#171B17]">
+                <div className="flex justify-between py-1 border-b border-border">
                   <span className="text-muted">Step</span>
                   <span className="font-semibold text-foreground">{topic?.title}</span>
                 </div>
-                <div className="flex justify-between py-1 border-b border-[#171B17]">
+                <div className="flex justify-between py-1 border-b border-border">
                   <span className="text-muted">Subtopic</span>
                   <span className="font-semibold text-foreground">{section?.title}</span>
                 </div>
-                <div className="flex justify-between py-1 border-b border-[#171B17]">
+                <div className="flex justify-between py-1 border-b border-border">
                   <span className="text-muted">Problem #</span>
                   <span className="font-mono text-amber-400 font-bold">
                     {problem.problem_number} / 463

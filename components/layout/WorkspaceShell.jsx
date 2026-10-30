@@ -10,11 +10,16 @@ import { TopBar } from './TopBar';
 import { CommandSearchModal } from './CommandSearchModal';
 import { DailyReviewModal } from '@/components/revision/DailyReviewModal';
 import { createClient } from '@/lib/supabase/client';
+import { calculateStreak, calculateWeekActivity } from '@/lib/revision/activity';
 
 export function WorkspaceShell({ children }) {
   const [isMobileOpen, setIsMobileOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
-  const [dueCount, setDueCount] = useState(12);
+  const [dueCount, setDueCount] = useState(0);
+  const [streakData, setStreakData] = useState(() => ({
+    streak: 0,
+    weekDays: calculateWeekActivity([]),
+  }));
   const pathname = usePathname();
 
   useEffect(() => {
@@ -23,26 +28,63 @@ export function WorkspaceShell({ children }) {
     return () => window.removeEventListener('open-command-search', handleOpenSearch);
   }, []);
 
-  // Fetch due reviews count on mount
+  // Fetch real due reviews and user study streak
   useEffect(() => {
-    async function fetchDueReviews() {
+    async function fetchStats() {
       try {
         const supabase = createClient();
-        const nowIso = new Date().toISOString();
-        const { count, error } = await supabase
-          .from('problem_review_schedules')
-          .select('id', { count: 'exact', head: true })
-          .lte('next_review_at', nowIso);
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
 
-        if (!error && count !== null) {
-          setDueCount(count > 0 ? count : 12);
-        }
+        const nowIso = new Date().toISOString();
+        const todayStr = nowIso.split('T')[0];
+
+        // 1. Fetch genuine due reviews
+        const [{ count: customCount }, { count: currCount }] = await Promise.all([
+          supabase
+            .from('problem_review_schedules')
+            .select('id', { count: 'exact', head: true })
+            .eq('user_id', user.id)
+            .lte('next_review_at', nowIso),
+          supabase
+            .from('user_curriculum_review_schedules')
+            .select('id', { count: 'exact', head: true })
+            .eq('user_id', user.id)
+            .lte('next_review_date', todayStr),
+        ]);
+
+        const totalDue = (customCount || 0) + (currCount || 0);
+        setDueCount(totalDue);
+
+        // 2. Fetch genuine activity events for streak
+        const [
+          { data: actEvents },
+          { data: probHistory },
+          { data: currHistory },
+          { data: currProgress },
+        ] = await Promise.all([
+          supabase.from('activity_events').select('created_at').eq('user_id', user.id).limit(100),
+          supabase.from('problem_review_history').select('reviewed_at').limit(100),
+          supabase.from('user_curriculum_review_history').select('reviewed_at').eq('user_id', user.id).limit(100),
+          supabase.from('user_curriculum_progress').select('last_activity_at').eq('user_id', user.id).limit(100),
+        ]);
+
+        const timestamps = [
+          ...(actEvents || []).map((e) => e.created_at),
+          ...(probHistory || []).map((h) => h.reviewed_at),
+          ...(currHistory || []).map((h) => h.reviewed_at),
+          ...(currProgress || []).map((p) => p.last_activity_at),
+        ].filter(Boolean);
+
+        const streak = calculateStreak(timestamps);
+        const weekDays = calculateWeekActivity(timestamps);
+        setStreakData({ streak, weekDays });
       } catch {
-        // ignore
+        // Keep initial zero state on network/auth errors
       }
     }
-    fetchDueReviews();
-  }, []);
+    fetchStats();
+  }, [pathname]);
 
   // Show Topic Tree column on workspace views
   const showTopicTree =
@@ -56,6 +98,8 @@ export function WorkspaceShell({ children }) {
       <AppSidebar
         isMobileOpen={isMobileOpen}
         onCloseMobile={() => setIsMobileOpen(false)}
+        dueCount={dueCount}
+        streakData={streakData}
       />
 
       {/* 2. Topic Tree Sidebar (Column 2 from Reference) */}

@@ -39,7 +39,7 @@ export function NotesListSidebar({
 
   return (
     <aside
-      className={`flex flex-col w-72 sm:w-80 border-r border-border bg-page/95 select-none shrink-0 h-full ${className}`}
+      className={`flex flex-col w-72 sm:w-80 border-r border-border bg-sidebar-secondary select-none shrink-0 h-full ${className}`}
     >
       {/* Top Header */}
       <div className="p-3.5 border-b border-border/80 space-y-3">

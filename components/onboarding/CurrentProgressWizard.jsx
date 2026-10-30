@@ -280,11 +280,11 @@ export function CurrentProgressWizard({
         role="dialog"
         aria-modal="true"
         aria-label="Progress Setup Wizard"
-        className="relative w-full max-w-4xl max-h-[90vh] flex flex-col rounded-2xl border border-[#232924] bg-[#0A0D0B] text-[#F5F5F0] shadow-2xl overflow-hidden"
+        className="relative w-full max-w-4xl max-h-[90vh] flex flex-col rounded-2xl border border-border bg-card text-foreground shadow-2xl overflow-hidden"
       >
         
         {/* Top Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-[#1C221D] bg-[#090B0A]">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-border bg-panel">
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 rounded-lg bg-amber-400/10 border border-amber-400/20 flex items-center justify-center text-amber-400">
               <Sparkles className="w-4 h-4" />
@@ -305,7 +305,7 @@ export function CurrentProgressWizard({
           <button
             type="button"
             onClick={handleSkip}
-            className="p-1.5 rounded-lg text-muted hover:text-foreground hover:bg-[#141815] transition-colors"
+            className="p-1.5 rounded-lg text-muted hover:text-foreground hover:bg-elevated transition-colors"
             title="Skip for now"
             aria-label="Skip onboarding for now"
           >
@@ -333,7 +333,7 @@ export function CurrentProgressWizard({
                 type="button"
                 onClick={handleStartFromBeginning}
                 disabled={isSubmitting}
-                className="group flex flex-col text-left p-6 rounded-2xl border border-[#1C221D] bg-[#0E120F] hover:border-amber-400/40 hover:bg-[#121713] transition-all cursor-pointer relative"
+                className="group flex flex-col text-left p-6 rounded-2xl border border-border bg-card hover:border-amber-400/40 hover:bg-elevated transition-all cursor-pointer relative"
               >
                 <div className="w-10 h-10 rounded-xl bg-neutral-800/80 flex items-center justify-center text-neutral-300 group-hover:text-amber-400 group-hover:bg-amber-400/10 transition-colors mb-4">
                   <BookOpen className="w-5 h-5" />
@@ -389,7 +389,7 @@ export function CurrentProgressWizard({
           /* 4-STEP WIZARD */
           <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
             {/* Step Indicator Bar */}
-            <div className="px-6 py-3 border-b border-[#1C221D] bg-[#0E120F]/60 flex items-center justify-between text-xs">
+            <div className="px-6 py-3 border-b border-border bg-panel flex items-center justify-between text-xs">
               <div className="flex items-center gap-2 sm:gap-4 overflow-x-auto">
                 {[
                   { step: 1, label: 'Studied Topics' },
@@ -405,7 +405,7 @@ export function CurrentProgressWizard({
                       currentStep === s.step
                         ? 'bg-amber-400/15 text-amber-400 font-bold border border-amber-400/20'
                         : currentStep > s.step
-                        ? 'text-foreground hover:bg-[#141815]'
+                        ? 'text-foreground hover:bg-elevated'
                         : 'text-muted hover:text-foreground'
                     )}
                   >
@@ -416,7 +416,7 @@ export function CurrentProgressWizard({
                           ? 'bg-amber-400 text-black'
                           : currentStep > s.step
                           ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
-                          : 'bg-[#181D19] text-muted'
+                          : 'bg-elevated text-muted'
                       )}
                     >
                       {currentStep > s.step ? <Check className="w-3 h-3 stroke-[3]" /> : s.step}
@@ -451,13 +451,13 @@ export function CurrentProgressWizard({
                     <div className="flex items-center gap-2 self-start sm:self-auto">
                       <button
                         onClick={selectAllTopics}
-                        className="px-2.5 py-1 rounded-md text-[11px] bg-[#141815] hover:bg-[#1C221D] border border-border text-foreground transition-colors"
+                        className="px-2.5 py-1 rounded-md text-[11px] bg-panel hover:bg-elevated border border-border text-foreground transition-colors cursor-pointer"
                       >
                         Select All (18)
                       </button>
                       <button
                         onClick={clearAllTopics}
-                        className="px-2.5 py-1 rounded-md text-[11px] bg-[#141815] hover:bg-[#1C221D] border border-border text-muted hover:text-foreground transition-colors"
+                        className="px-2.5 py-1 rounded-md text-[11px] bg-panel hover:bg-elevated border border-border text-muted hover:text-foreground transition-colors cursor-pointer"
                       >
                         Clear
                       </button>
@@ -475,7 +475,7 @@ export function CurrentProgressWizard({
                             'flex items-center gap-3 p-3 rounded-xl border transition-all cursor-pointer select-none',
                             isSelected
                               ? 'bg-amber-400/10 border-amber-400/40 text-foreground'
-                              : 'bg-[#0E120F] border-[#1C221D] text-muted hover:border-[#2C352E] hover:text-foreground'
+                              : 'bg-card border-border text-muted hover:border-amber-400/30 hover:text-foreground'
                           )}
                         >
                           <div
@@ -483,7 +483,7 @@ export function CurrentProgressWizard({
                               'w-5 h-5 rounded flex items-center justify-center transition-colors',
                               isSelected
                                 ? 'bg-amber-400 text-black'
-                                : 'border border-[#2C352E] bg-[#141815]'
+                                : 'border border-border bg-panel'
                             )}
                           >
                             {isSelected && <Check className="w-3.5 h-3.5 stroke-[3]" />}
@@ -518,13 +518,13 @@ export function CurrentProgressWizard({
                     <div className="flex items-center gap-2 self-start sm:self-auto">
                       <button
                         onClick={selectAllSections}
-                        className="px-2.5 py-1 rounded-md text-[11px] bg-[#141815] hover:bg-[#1C221D] border border-border text-foreground transition-colors"
+                        className="px-2.5 py-1 rounded-md text-[11px] bg-panel hover:bg-elevated border border-border text-foreground transition-colors cursor-pointer"
                       >
                         Select All Visible
                       </button>
                       <button
                         onClick={clearAllSections}
-                        className="px-2.5 py-1 rounded-md text-[11px] bg-[#141815] hover:bg-[#1C221D] border border-border text-muted hover:text-foreground transition-colors"
+                        className="px-2.5 py-1 rounded-md text-[11px] bg-panel hover:bg-elevated border border-border text-muted hover:text-foreground transition-colors cursor-pointer"
                       >
                         Clear
                       </button>
@@ -541,7 +541,7 @@ export function CurrentProgressWizard({
                         return (
                           <div
                             key={topic.id}
-                            className="p-3.5 rounded-xl border border-[#1C221D] bg-[#0E120F] space-y-2.5"
+                            className="p-3.5 rounded-xl border border-border bg-card space-y-2.5"
                           >
                             <div className="text-xs font-bold text-amber-400">
                               {topic.title}
@@ -557,7 +557,7 @@ export function CurrentProgressWizard({
                                       'flex items-center gap-2.5 p-2 rounded-lg border text-xs cursor-pointer select-none transition-all',
                                       isSecSelected
                                         ? 'bg-amber-400/10 border-amber-400/40 text-foreground font-semibold'
-                                        : 'bg-[#121613] border-[#1C221D] text-muted hover:text-foreground hover:border-[#2C352E]'
+                                        : 'bg-panel border-border text-muted hover:text-foreground hover:border-amber-400/30'
                                     )}
                                   >
                                     <div
@@ -565,7 +565,7 @@ export function CurrentProgressWizard({
                                         'w-4 h-4 rounded flex items-center justify-center text-[10px]',
                                         isSecSelected
                                           ? 'bg-amber-400 text-black'
-                                          : 'border border-[#2C352E] bg-[#171B17]'
+                                          : 'border border-border bg-card'
                                       )}
                                     >
                                       {isSecSelected && <Check className="w-3 h-3 stroke-[3]" />}
@@ -621,7 +621,7 @@ export function CurrentProgressWizard({
                       </button>
                       <button
                         onClick={() => bulkSetStatus('Not started')}
-                        className="px-2.5 py-1 rounded-md text-[11px] bg-[#141815] text-muted hover:text-foreground border border-border transition-colors cursor-pointer"
+                        className="px-2.5 py-1 rounded-md text-[11px] bg-panel text-muted hover:text-foreground border border-border transition-colors cursor-pointer"
                       >
                         Reset
                       </button>
@@ -635,12 +635,12 @@ export function CurrentProgressWizard({
                       placeholder="Filter questions..."
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
-                      className="flex-1 min-w-[180px] px-3 py-1.5 rounded-lg bg-[#0E120F] border border-[#1C221D] text-xs text-foreground placeholder:text-muted focus:outline-none focus:border-amber-400"
+                      className="flex-1 min-w-[180px] px-3 py-1.5 rounded-lg bg-panel border border-border text-xs text-foreground placeholder:text-muted focus:outline-none focus:border-amber-400"
                     />
                     <select
                       value={activeStep3TopicId || ''}
                       onChange={(e) => setActiveStep3TopicId(e.target.value || null)}
-                      className="px-3 py-1.5 rounded-lg bg-[#0E120F] border border-[#1C221D] text-xs text-foreground focus:outline-none focus:border-amber-400"
+                      className="px-3 py-1.5 rounded-lg bg-panel border border-border text-xs text-foreground focus:outline-none focus:border-amber-400 cursor-pointer"
                     >
                       <option value="">All Selected Topics ({topics.length})</option>
                       {topics.map((t) => (
@@ -652,7 +652,7 @@ export function CurrentProgressWizard({
                   </div>
 
                   {/* Problem Table / List */}
-                  <div className="border border-[#1C221D] rounded-xl overflow-hidden bg-[#0A0D0B] divide-y divide-[#171B17] max-h-[420px] overflow-y-auto">
+                  <div className="border border-border rounded-xl overflow-hidden bg-card divide-y divide-border max-h-[420px] overflow-y-auto">
                     {step3Problems.length === 0 ? (
                       <div className="p-8 text-center text-xs text-muted">
                         No questions match your current topic or filter selection.
@@ -663,7 +663,7 @@ export function CurrentProgressWizard({
                         return (
                           <div
                             key={prob.id}
-                            className="flex items-center justify-between p-2.5 hover:bg-[#0E120F] transition-colors gap-3"
+                            className="flex items-center justify-between p-2.5 hover:bg-elevated transition-colors gap-3"
                           >
                             <div className="flex items-center gap-3 min-w-0 flex-1">
                               <span className="text-[10px] text-muted w-7 text-right">
@@ -712,7 +712,7 @@ export function CurrentProgressWizard({
                                         : st.id === 'Needs revision'
                                         ? 'bg-amber-400/20 text-amber-400 border border-amber-400/40'
                                         : 'bg-neutral-800 text-neutral-300 border border-neutral-700'
-                                      : 'text-muted hover:text-foreground hover:bg-[#141815]'
+                                      : 'text-muted hover:text-foreground hover:bg-elevated'
                                   )}
                                 >
                                   {st.label}
@@ -740,30 +740,30 @@ export function CurrentProgressWizard({
                   </div>
 
                   {/* Summary Card */}
-                  <div className="p-5 rounded-2xl border border-[#1C221D] bg-[#0E120F] space-y-4">
-                    <div className="text-xs font-bold text-foreground border-b border-[#1C221D] pb-2">
+                  <div className="p-5 rounded-2xl border border-border bg-card space-y-4">
+                    <div className="text-xs font-bold text-foreground border-b border-border pb-2">
                       Progress Import Summary
                     </div>
                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-center">
-                      <div className="p-3 rounded-xl bg-[#090B0A] border border-[#171B17]">
+                      <div className="p-3 rounded-xl bg-panel border border-border">
                         <div className="text-lg font-extrabold text-foreground">
                           {selectedTopics.size}
                         </div>
                         <div className="text-[10px] text-muted">Topics Studied</div>
                       </div>
-                      <div className="p-3 rounded-xl bg-[#090B0A] border border-[#171B17]">
+                      <div className="p-3 rounded-xl bg-panel border border-border">
                         <div className="text-lg font-extrabold text-emerald-400">
                           {solvedCount}
                         </div>
                         <div className="text-[10px] text-muted">Solved Problems</div>
                       </div>
-                      <div className="p-3 rounded-xl bg-[#090B0A] border border-[#171B17]">
+                      <div className="p-3 rounded-xl bg-panel border border-border">
                         <div className="text-lg font-extrabold text-blue-400">
                           {attemptedCount}
                         </div>
                         <div className="text-[10px] text-muted">Attempted</div>
                       </div>
-                      <div className="p-3 rounded-xl bg-[#090B0A] border border-[#171B17]">
+                      <div className="p-3 rounded-xl bg-panel border border-border">
                         <div className="text-lg font-extrabold text-amber-400">
                           {needsRevisionCount}
                         </div>
@@ -772,13 +772,13 @@ export function CurrentProgressWizard({
                     </div>
 
                     {/* Revision Queue Option */}
-                    <div className="pt-3 border-t border-[#1C221D] space-y-2">
+                    <div className="pt-3 border-t border-border space-y-2">
                       <label className="flex items-start gap-3 cursor-pointer select-none">
                         <input
                           type="checkbox"
                           checked={reviseExisting}
                           onChange={(e) => setReviseExisting(e.target.checked)}
-                          className="mt-0.5 rounded border-[#2C352E] text-amber-400 focus:ring-0 bg-[#141815]"
+                          className="mt-0.5 rounded border-border text-amber-400 focus:ring-0 bg-panel"
                         />
                         <div className="text-xs">
                           <span className="font-semibold text-foreground">
@@ -805,13 +805,13 @@ export function CurrentProgressWizard({
             </div>
 
             {/* Bottom Modal Navigation */}
-            <div className="flex items-center justify-between px-6 py-4 border-t border-[#1C221D] bg-[#090B0A]">
+            <div className="flex items-center justify-between px-6 py-4 border-t border-border bg-panel">
               <div>
                 {currentStep > 1 && (
                   <button
                     type="button"
                     onClick={() => setCurrentStep((prev) => prev - 1)}
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-border bg-[#141815] text-xs font-semibold text-foreground hover:bg-[#1C221D] transition-colors cursor-pointer"
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-border bg-panel text-xs font-semibold text-foreground hover:bg-elevated transition-colors cursor-pointer"
                   >
                     <ArrowLeft className="w-3.5 h-3.5" />
                     <span>Back</span>

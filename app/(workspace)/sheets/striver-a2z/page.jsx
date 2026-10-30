@@ -177,7 +177,7 @@ function StriverA2ZSheetContent() {
   };
 
   return (
-    <div className="flex-1 flex flex-col min-w-0 bg-[#000000] text-[#F5F5F0] overflow-y-auto">
+    <div className="flex-1 flex flex-col min-w-0 bg-page text-foreground overflow-y-auto">
       {/* Current Progress Setup Wizard */}
       <CurrentProgressWizard
         isOpen={isWizardOpen}
@@ -192,7 +192,7 @@ function StriverA2ZSheetContent() {
       <div className="max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8 space-y-6">
         
         {/* Top Header & Breadcrumb */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#1C221D] pb-5">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-border pb-5">
           <div className="space-y-1">
             <div className="flex items-center gap-2 text-xs text-muted">
               <Link href="/sheets" className="hover:text-foreground transition-colors">
@@ -222,7 +222,7 @@ function StriverA2ZSheetContent() {
         </div>
 
         {/* Filter & Search Bar */}
-        <div className="p-4 rounded-xl border border-[#1C221D] bg-[#0A0D0B] flex flex-wrap items-center justify-between gap-3 shadow-md">
+        <div className="p-4 rounded-xl border border-border bg-card flex flex-wrap items-center justify-between gap-3 shadow-xs">
           <div className="flex flex-wrap items-center gap-2 flex-1 min-w-[280px]">
             {/* Search Input */}
             <div className="relative flex-1 min-w-[200px]">
@@ -232,7 +232,7 @@ function StriverA2ZSheetContent() {
                 placeholder="Search problem title or #..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-9 pr-3 py-1.5 rounded-lg bg-[#0E120F] border border-[#1C221D] text-xs text-foreground placeholder:text-muted focus:outline-none focus:border-amber-400"
+                className="w-full pl-9 pr-3 py-1.5 rounded-lg bg-panel border border-border text-xs text-foreground placeholder:text-muted focus:outline-none focus:border-amber-400"
               />
             </div>
 
@@ -240,7 +240,7 @@ function StriverA2ZSheetContent() {
             <select
               value={difficultyFilter}
               onChange={(e) => setDifficultyFilter(e.target.value)}
-              className="px-3 py-1.5 rounded-lg bg-[#0E120F] border border-[#1C221D] text-xs text-foreground focus:outline-none focus:border-amber-400 cursor-pointer"
+              className="px-3 py-1.5 rounded-lg bg-panel border border-border text-xs text-foreground focus:outline-none focus:border-amber-400 cursor-pointer"
             >
               <option value="all">All Difficulties</option>
               <option value="easy">Easy (Basic)</option>
@@ -252,7 +252,7 @@ function StriverA2ZSheetContent() {
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
-              className="px-3 py-1.5 rounded-lg bg-[#0E120F] border border-[#1C221D] text-xs text-foreground focus:outline-none focus:border-amber-400 cursor-pointer"
+              className="px-3 py-1.5 rounded-lg bg-panel border border-border text-xs text-foreground focus:outline-none focus:border-amber-400 cursor-pointer"
             >
               <option value="all">All Statuses</option>
               <option value="Not started">Not started</option>
@@ -266,14 +266,14 @@ function StriverA2ZSheetContent() {
           <div className="flex items-center gap-2">
             <button
               onClick={expandAll}
-              className="px-2.5 py-1 text-xs text-muted hover:text-foreground transition-colors"
+              className="px-2.5 py-1 text-xs text-muted hover:text-foreground transition-colors cursor-pointer"
             >
               Expand All
             </button>
             <span className="text-muted">•</span>
             <button
               onClick={collapseAll}
-              className="px-2.5 py-1 text-xs text-muted hover:text-foreground transition-colors"
+              className="px-2.5 py-1 text-xs text-muted hover:text-foreground transition-colors cursor-pointer"
             >
               Collapse All
             </button>
@@ -301,12 +301,12 @@ function StriverA2ZSheetContent() {
             return (
               <div
                 key={topic.id}
-                className="rounded-2xl border border-[#1C221D] bg-[#0A0D0B] overflow-hidden transition-all shadow-md"
+                className="rounded-2xl border border-border bg-card overflow-hidden transition-all shadow-xs"
               >
                 {/* Topic Header Bar */}
                 <div
                   onClick={() => toggleTopicExpand(topic.id)}
-                  className="flex items-center justify-between p-4 bg-[#0E120F] hover:bg-[#121613] cursor-pointer select-none transition-colors"
+                  className="flex items-center justify-between p-4 bg-card hover:bg-elevated cursor-pointer select-none transition-colors"
                 >
                   <div className="flex items-center gap-3 min-w-0 flex-1">
                     <button className="text-muted hover:text-foreground">
@@ -341,7 +341,7 @@ function StriverA2ZSheetContent() {
                       <span className="text-[11px] text-muted font-medium">
                         {topicSolvedCount} / {totalTopicProblems.length} ({completionPercent}%)
                       </span>
-                      <div className="w-24 h-1.5 rounded-full bg-[#1A1F1B] overflow-hidden">
+                      <div className="w-24 h-1.5 rounded-full bg-border overflow-hidden">
                         <div
                           className="h-full bg-amber-400 rounded-full"
                           style={{ width: `${completionPercent}%` }}
@@ -359,7 +359,7 @@ function StriverA2ZSheetContent() {
                         'px-2.5 py-1 rounded-lg text-[10px] font-semibold border transition-colors cursor-pointer',
                         topic.is_studied
                           ? 'bg-emerald-500/20 border-emerald-500/40 text-emerald-400'
-                          : 'bg-[#141815] border-border text-muted hover:text-foreground'
+                          : 'bg-panel border-border text-muted hover:text-foreground'
                       )}
                       title="Toggle studied status for this topic"
                     >
@@ -370,7 +370,7 @@ function StriverA2ZSheetContent() {
 
                 {/* Expanded Sections & Problems */}
                 {isExpanded && (
-                  <div className="p-4 space-y-4 bg-[#090B0A] border-t border-[#171B17]">
+                  <div className="p-4 space-y-4 bg-panel/40 border-t border-border">
                     {topicSections.map((sec) => {
                       const secProblems = topicProblems.filter((p) => p.section_id === sec.id);
                       if (secProblems.length === 0) return null;
@@ -385,7 +385,7 @@ function StriverA2ZSheetContent() {
                           </div>
 
                           {/* Problem Rows Table */}
-                          <div className="border border-[#1C221D] rounded-xl overflow-hidden bg-[#0A0D0B] divide-y divide-[#171B17]">
+                          <div className="border border-border rounded-xl overflow-hidden bg-card divide-y divide-border">
                             {secProblems.map((prob) => {
                               const isSolved = prob.status === 'Solved';
                               const isAttempted = prob.status === 'Attempted';
@@ -394,7 +394,7 @@ function StriverA2ZSheetContent() {
                               return (
                                 <div
                                   key={prob.id}
-                                  className="flex items-center justify-between p-2.5 sm:px-4 sm:py-3 hover:bg-[#0E120F] transition-colors gap-3"
+                                  className="flex items-center justify-between p-2.5 sm:px-4 sm:py-3 hover:bg-elevated transition-colors gap-3"
                                 >
                                   {/* Problem Title & Details */}
                                   <div className="flex items-center gap-3 min-w-0 flex-1">
@@ -447,7 +447,7 @@ function StriverA2ZSheetContent() {
                                           ? 'bg-blue-500/15 border-blue-500/40 text-blue-400'
                                           : needsRev
                                           ? 'bg-amber-400/15 border-amber-400/40 text-amber-400'
-                                          : 'bg-[#141815] border-border text-muted hover:text-foreground'
+                                          : 'bg-panel border-border text-muted hover:text-foreground'
                                       )}
                                     >
                                       <option value="Not started">Not started</option>
@@ -459,7 +459,7 @@ function StriverA2ZSheetContent() {
                                     {/* Open Notebook Button */}
                                     <Link
                                       href={`/sheets/striver-a2z/${prob.id}`}
-                                      className="p-1.5 rounded-lg bg-[#141815] hover:bg-amber-400 hover:text-black border border-border text-muted transition-all cursor-pointer"
+                                      className="p-1.5 rounded-lg bg-panel hover:bg-accent hover:text-accent-text border border-border text-muted transition-all cursor-pointer"
                                       title="Open Notebook & Code Editor"
                                     >
                                       <FileEdit className="w-3.5 h-3.5" />
@@ -488,7 +488,7 @@ export default function StriverA2ZSheetPage() {
   return (
     <Suspense
       fallback={
-        <div className="flex-1 flex items-center justify-center p-12 bg-black text-muted text-xs">
+        <div className="flex-1 flex items-center justify-center p-12 bg-page text-muted text-xs">
           <div className="flex items-center gap-2">
             <span className="w-2 h-2 rounded-full bg-amber-400 animate-ping" />
             Loading Striver A2Z Curriculum...

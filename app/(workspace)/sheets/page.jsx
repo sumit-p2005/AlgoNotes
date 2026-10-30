@@ -59,7 +59,7 @@ export default function SheetsPage() {
   };
 
   return (
-    <div className="flex-1 flex flex-col min-w-0 bg-[#000000] text-[#F5F5F0] overflow-y-auto">
+    <div className="flex-1 flex flex-col min-w-0 bg-page text-foreground overflow-y-auto">
       {/* Onboarding / Progress Wizard Modal */}
       <CurrentProgressWizard
         isOpen={isWizardOpen}
@@ -74,7 +74,7 @@ export default function SheetsPage() {
       <div className="max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8 space-y-6">
         
         {/* Page Top Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#1C221D] pb-5">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-border pb-5">
           <div className="space-y-1">
             <div className="flex items-center gap-2">
               <span className="px-2 py-0.5 rounded-md bg-amber-400/10 text-amber-400 border border-amber-400/20 text-[10px] font-bold tracking-wider uppercase">
@@ -113,13 +113,13 @@ export default function SheetsPage() {
         </div>
 
         {/* Featured Card: Striver A2Z DSA Sheet */}
-        <div className="relative overflow-hidden rounded-2xl border border-[#232924] bg-gradient-to-br from-[#0E120F] via-[#090B0A] to-[#0A0D0B] p-6 lg:p-8 shadow-xl">
+        <div className="relative overflow-hidden rounded-2xl border border-border bg-card p-6 lg:p-8 shadow-md">
           <div className="absolute top-0 right-0 w-96 h-96 bg-amber-400/5 rounded-full blur-3xl -z-10 pointer-events-none" />
 
           <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
             <div className="space-y-3 max-w-2xl">
               <div className="flex items-center gap-2.5">
-                <div className="w-9 h-9 rounded-xl bg-amber-400 text-black flex items-center justify-center font-black text-sm shadow-md">
+                <div className="w-9 h-9 rounded-xl bg-accent text-accent-text flex items-center justify-center font-black text-sm shadow-sm">
                   A2Z
                 </div>
                 <div>
@@ -144,7 +144,7 @@ export default function SheetsPage() {
                     {stats.totalSolved} / {stats.totalProblems} Solved ({stats.completionPercent}%)
                   </span>
                 </div>
-                <div className="w-full h-2 rounded-full bg-[#181D19] overflow-hidden">
+                <div className="w-full h-2 rounded-full bg-border overflow-hidden">
                   <div
                     className="h-full bg-gradient-to-r from-amber-500 to-amber-300 rounded-full transition-all duration-500"
                     style={{ width: `${Math.min(100, Math.max(stats.completionPercent, 2))}%` }}
@@ -155,25 +155,25 @@ export default function SheetsPage() {
 
             {/* Quick Metrics Grid */}
             <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-2 gap-3 min-w-[280px]">
-              <div className="p-3.5 rounded-xl border border-[#1C221D] bg-[#0A0D0B]/70">
+              <div className="p-3.5 rounded-xl border border-border bg-panel">
                 <div className="text-xs text-muted mb-0.5">Topics Studied</div>
                 <div className="text-lg font-bold text-foreground">
                   {stats.totalTopicsStudied} / {stats.totalTopics}
                 </div>
               </div>
-              <div className="p-3.5 rounded-xl border border-[#1C221D] bg-[#0A0D0B]/70">
+              <div className="p-3.5 rounded-xl border border-border bg-panel">
                 <div className="text-xs text-muted mb-0.5">Attempted</div>
                 <div className="text-lg font-bold text-blue-400">
                   {stats.totalAttempted}
                 </div>
               </div>
-              <div className="p-3.5 rounded-xl border border-[#1C221D] bg-[#0A0D0B]/70">
+              <div className="p-3.5 rounded-xl border border-border bg-panel">
                 <div className="text-xs text-muted mb-0.5">Solved</div>
                 <div className="text-lg font-bold text-emerald-400">
                   {stats.totalSolved}
                 </div>
               </div>
-              <div className="p-3.5 rounded-xl border border-[#1C221D] bg-[#0A0D0B]/70">
+              <div className="p-3.5 rounded-xl border border-border bg-panel">
                 <div className="text-xs text-muted mb-0.5">Needs Revision</div>
                 <div className="text-lg font-bold text-amber-400">
                   {stats.totalNeedsRevision}
@@ -183,7 +183,7 @@ export default function SheetsPage() {
           </div>
 
           {/* Action Row */}
-          <div className="mt-6 pt-5 border-t border-[#1C221D] flex flex-wrap items-center justify-between gap-3">
+          <div className="mt-6 pt-5 border-t border-border flex flex-wrap items-center justify-between gap-3">
             <div className="flex items-center gap-3 text-xs text-muted">
               <span className="flex items-center gap-1.5">
                 <span className="w-2 h-2 rounded-full bg-emerald-400" />
@@ -202,7 +202,7 @@ export default function SheetsPage() {
             <div className="flex items-center gap-2">
               <Link
                 href="/sheets/striver-a2z"
-                className="px-4 py-2 rounded-xl bg-amber-400 hover:bg-amber-300 text-black text-xs font-bold transition-all flex items-center gap-2"
+                className="px-4 py-2 rounded-xl bg-accent hover:bg-accent-hover text-accent-text text-xs font-bold transition-all flex items-center gap-2 cursor-pointer shadow-xs"
               >
                 <span>Open Striver A2Z Sheet</span>
                 <ChevronRight className="w-4 h-4" />
@@ -231,11 +231,11 @@ export default function SheetsPage() {
               <Link
                 key={topic.id}
                 href={`/sheets/striver-a2z?topicId=${topic.id}`}
-                className="group p-4 rounded-xl border border-[#1C221D] bg-[#0E120F] hover:border-amber-400/40 hover:bg-[#121613] transition-all flex flex-col justify-between"
+                className="group p-4 rounded-xl border border-border bg-card hover:border-amber-400/40 hover:bg-elevated transition-all flex flex-col justify-between"
               >
                 <div className="space-y-1.5">
                   <div className="flex items-center justify-between">
-                    <span className="text-[10px] font-bold text-amber-400/80 px-1.5 py-0.2 rounded bg-amber-400/10 border border-amber-400/20">
+                    <span className="text-[10px] font-bold text-amber-400 px-1.5 py-0.2 rounded bg-amber-400/10 border border-amber-400/20">
                       Step {topic.step_number}
                     </span>
                     {topic.is_studied && (
@@ -253,7 +253,7 @@ export default function SheetsPage() {
                   </div>
                 </div>
 
-                <div className="mt-3 pt-2.5 border-t border-[#171B17] flex items-center justify-between text-[11px]">
+                <div className="mt-3 pt-2.5 border-t border-border flex items-center justify-between text-[11px]">
                   <span className="text-muted">
                     {topic.solved || 0} / {topic.expected_problems || topic.total} solved
                   </span>

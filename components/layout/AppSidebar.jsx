@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import Image from 'next/image';
@@ -20,7 +20,6 @@ import {
   X,
 } from 'lucide-react';
 import { cn } from '@/lib/utils/cn';
-import { createClient } from '@/lib/supabase/client';
 
 const NAV_ITEMS = [
   { label: 'Dashboard', href: '/dashboard', icon: Home },
@@ -38,30 +37,11 @@ const NAV_ITEMS = [
 export function AppSidebar({
   isMobileOpen = false,
   onCloseMobile,
+  dueCount = 0,
+  streakData = { streak: 0, weekDays: [] },
 }) {
   const pathname = usePathname();
   const router = useRouter();
-  const [dueCount, setDueCount] = useState(12);
-
-  useEffect(() => {
-    async function fetchDue() {
-      try {
-        const supabase = createClient();
-        const nowIso = new Date().toISOString();
-        const { count, error } = await supabase
-          .from('problem_review_schedules')
-          .select('id', { count: 'exact', head: true })
-          .lte('next_review_at', nowIso);
-
-        if (!error && count !== null) {
-          setDueCount(count > 0 ? count : 12);
-        }
-      } catch {
-        // fallback
-      }
-    }
-    fetchDue();
-  }, []);
 
   return (
     <>
@@ -76,14 +56,14 @@ export function AppSidebar({
       {/* Main Left Navigation Bar */}
       <aside
         className={cn(
-          'fixed inset-y-0 left-0 z-40 flex flex-col w-56 border-r border-border bg-page md:bg-page transition-transform duration-200 select-none md:static shrink-0',
+          'fixed inset-y-0 left-0 z-40 flex flex-col w-56 border-r border-border bg-sidebar md:bg-sidebar transition-transform duration-200 select-none md:static shrink-0',
           isMobileOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'
         )}
       >
-        {/* Logo at Top */}
+        {/* Logo and Wordmark at Top */}
         <div className="flex items-center justify-between h-14 px-4 pt-1">
-          <Link href="/dashboard" className="flex items-center gap-2">
-            <div className="relative w-7 h-7">
+          <Link href="/dashboard" className="flex items-center gap-2.5 group">
+            <div className="relative w-7 h-7 shrink-0">
               <Image
                 src="/algonotes-dark.png"
                 alt="AlgoNotes"
@@ -99,6 +79,9 @@ export function AppSidebar({
                 priority
               />
             </div>
+            <span className="font-extrabold tracking-tight text-base text-foreground flex items-center">
+              Algo<span className="text-amber-400">Notes</span>
+            </span>
           </Link>
 
           <button
@@ -180,17 +163,47 @@ export function AppSidebar({
             <span className="text-[11px] text-muted">Study Streak</span>
           </div>
           <div className="flex items-center gap-2">
-            <Flame className="w-4 h-4 text-amber-500 fill-amber-500" />
-            <span className="text-sm font-bold text-amber-400">12 days</span>
+            <Flame
+              className={cn(
+                'w-4 h-4',
+                (streakData?.streak || 0) > 0 ? 'text-amber-500 fill-amber-500' : 'text-muted'
+              )}
+            />
+            <span
+              className={cn(
+                'text-sm font-bold',
+                (streakData?.streak || 0) > 0 ? 'text-amber-400' : 'text-muted'
+              )}
+            >
+              {streakData?.streak || 0} {(streakData?.streak || 0) === 1 ? 'day' : 'days'}
+            </span>
           </div>
-          <div className="flex items-center justify-between pt-2 text-[10px] text-muted font-medium">
-            <span className="text-amber-400 font-bold">• S</span>
-            <span className="text-amber-400 font-bold">• M</span>
-            <span className="text-amber-400 font-bold">• T</span>
-            <span className="text-amber-400 font-bold">• W</span>
-            <span className="text-amber-400 font-bold">• T</span>
-            <span className="text-amber-400 font-bold">• F</span>
-            <span className="text-muted">• S</span>
+          <div className="flex items-center justify-between pt-2 text-[10px] font-medium">
+            {(streakData?.weekDays && streakData.weekDays.length > 0
+              ? streakData.weekDays
+              : [
+                  { label: 'S', isActive: false, isToday: false },
+                  { label: 'M', isActive: false, isToday: false },
+                  { label: 'T', isActive: false, isToday: false },
+                  { label: 'W', isActive: false, isToday: false },
+                  { label: 'T', isActive: false, isToday: false },
+                  { label: 'F', isActive: false, isToday: false },
+                  { label: 'S', isActive: false, isToday: false },
+                ]
+            ).map((day, idx) => (
+              <span
+                key={idx}
+                className={cn(
+                  day.isActive
+                    ? 'text-amber-400 font-bold'
+                    : day.isToday
+                    ? 'text-foreground font-semibold'
+                    : 'text-muted/50'
+                )}
+              >
+                • {day.label}
+              </span>
+            ))}
           </div>
         </div>
       </aside>
