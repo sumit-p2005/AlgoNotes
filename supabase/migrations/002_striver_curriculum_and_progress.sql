@@ -208,3 +208,4 @@ create policy "Users can CRUD own curriculum bookmarks" on public.user_curriculu
 
 create policy "Users can CRUD own onboarding progress" on public.user_onboarding_progress
   for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
+

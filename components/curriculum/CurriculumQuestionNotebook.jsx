@@ -201,6 +201,7 @@ export function CurriculumQuestionNotebook({
                   rel="noopener noreferrer"
                   className="text-muted hover:text-amber-400 transition-colors p-1"
                   title="Open Problem Link"
+                  aria-label="Open external problem link"
                 >
                   <ExternalLink className="w-4 h-4" />
                 </a>
@@ -290,6 +291,7 @@ export function CurriculumQuestionNotebook({
                 onClick={() => prevProblem && router.push(`/sheets/striver-a2z/${prevProblem.id}`)}
                 className="p-1.5 text-muted hover:text-foreground hover:bg-[#141815] disabled:opacity-30 disabled:hover:bg-transparent transition-colors cursor-pointer"
                 title={prevProblem ? `Previous: #${prevProblem.problem_number} ${prevProblem.title}` : 'No previous problem'}
+                aria-label={prevProblem ? `Previous problem: #${prevProblem.problem_number} ${prevProblem.title}` : 'No previous problem'}
               >
                 <ChevronLeft className="w-4 h-4" />
               </button>
@@ -300,6 +302,7 @@ export function CurriculumQuestionNotebook({
                 onClick={() => nextProblem && router.push(`/sheets/striver-a2z/${nextProblem.id}`)}
                 className="p-1.5 text-muted hover:text-foreground hover:bg-[#141815] disabled:opacity-30 disabled:hover:bg-transparent transition-colors cursor-pointer"
                 title={nextProblem ? `Next: #${nextProblem.problem_number} ${nextProblem.title}` : 'No next problem'}
+                aria-label={nextProblem ? `Next problem: #${nextProblem.problem_number} ${nextProblem.title}` : 'No next problem'}
               >
                 <ChevronRight className="w-4 h-4" />
               </button>
@@ -632,6 +635,7 @@ export function CurriculumQuestionNotebook({
                     type="button"
                     onClick={() => handleFieldChange('confidence_rating', star)}
                     className="p-1 text-muted hover:text-amber-400 transition-colors cursor-pointer"
+                    aria-label={`Set confidence to ${star} out of 5`}
                   >
                     <Star
                       className={cn(
@@ -683,3 +687,4 @@ export function CurriculumQuestionNotebook({
     </div>
   );
 }
+

@@ -103,6 +103,7 @@ export function AppSidebar({
             type="button"
             onClick={onCloseMobile}
             className="md:hidden p-1.5 rounded-lg text-muted hover:text-foreground"
+            aria-label="Close navigation menu"
           >
             <X className="w-4 h-4" />
           </button>

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import {
@@ -30,9 +30,8 @@ export default function SheetsPage() {
   const [filterDifficulty, setFilterDifficulty] = useState('all');
   const [filterStatus, setFilterStatus] = useState('all');
 
-  const fetchCurriculum = async () => {
+  const fetchCurriculum = useCallback(async () => {
     try {
-      setLoading(true);
       const res = await fetch('/api/curriculum');
       if (res.ok) {
         const data = await res.json();
@@ -43,11 +42,11 @@ export default function SheetsPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     fetchCurriculum();
-  }, []);
+  }, [fetchCurriculum]);
 
   const stats = curriculumData?.stats || {
     totalProblems: 463,
@@ -272,3 +271,4 @@ export default function SheetsPage() {
     </div>
   );
 }
+

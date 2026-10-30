@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import {
   FolderTree,
@@ -32,7 +32,7 @@ export default function TopicsPage() {
   const [editTopicName, setEditTopicName] = useState('');
   const [loading, setLoading] = useState(true);
 
-  const fetchTopicsAndProblems = async () => {
+  const fetchTopicsAndProblems = useCallback(async () => {
     try {
       const supabase = createClient();
       const [{ data: tData }, { data: pData }] = await Promise.all([
@@ -43,19 +43,17 @@ export default function TopicsPage() {
       const loadedTopics = tData || [];
       setTopics(loadedTopics);
       setProblems(pData || []);
-      if (loadedTopics.length > 0 && !selectedTopicId) {
-        setSelectedTopicId(loadedTopics[0].id);
-      }
+      setSelectedTopicId((prev) => prev || (loadedTopics.length > 0 ? loadedTopics[0].id : null));
     } catch (err) {
       console.error('Failed to load topics:', err);
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     fetchTopicsAndProblems();
-  }, []);
+  }, [fetchTopicsAndProblems]);
 
   const toggleExpand = (id, e) => {
     e.stopPropagation();

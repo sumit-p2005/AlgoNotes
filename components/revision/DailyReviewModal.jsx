@@ -7,18 +7,29 @@ import { Button } from '@/components/ui/Button';
 
 export function DailyReviewModal({ dueCount = 0 }) {
   const router = useRouter();
-  const [isOpen, setIsOpen] = useState(false);
+  const [isOpen, setIsOpen] = useState(() => {
+    if (dueCount <= 0 || typeof window === 'undefined') return false;
+    try {
+      const todayStr = new Date().toISOString().split('T')[0];
+      const dismissedDate = sessionStorage.getItem('algonotes_review_prompt_dismissed');
+      return dismissedDate !== todayStr;
+    } catch {
+      return false;
+    }
+  });
 
   useEffect(() => {
     if (dueCount <= 0) return;
 
-    // Check if dismissed for today's calendar date
-    const todayStr = new Date().toISOString().split('T')[0];
-    const dismissedDate = sessionStorage.getItem('algonotes_review_prompt_dismissed');
+    try {
+      const todayStr = new Date().toISOString().split('T')[0];
+      const dismissedDate = sessionStorage.getItem('algonotes_review_prompt_dismissed');
 
-    if (dismissedDate !== todayStr) {
-      setIsOpen(true);
-    }
+      if (dismissedDate !== todayStr) {
+        const timer = setTimeout(() => setIsOpen(true), 0);
+        return () => clearTimeout(timer);
+      }
+    } catch {}
   }, [dueCount]);
 
   const handleDismiss = () => {
@@ -36,11 +47,17 @@ export function DailyReviewModal({ dueCount = 0 }) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-200">
-      <div className="relative w-full max-w-md rounded-2xl border border-border bg-panel shadow-2xl p-6 text-foreground">
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-label="Daily Spaced Repetition Due"
+        className="relative w-full max-w-md rounded-2xl border border-border bg-panel shadow-2xl p-6 text-foreground"
+      >
         <button
           type="button"
           onClick={handleDismiss}
           className="absolute top-4 right-4 text-muted hover:text-foreground p-1 rounded-lg hover:bg-elevated transition-colors"
+          aria-label="Dismiss review prompt"
         >
           <X className="w-4 h-4" />
         </button>

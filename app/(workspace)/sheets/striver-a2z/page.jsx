@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useMemo, Suspense } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, Suspense } from 'react';
 import Link from 'next/link';
 import { useSearchParams, useRouter } from 'next/navigation';
 import {
@@ -38,9 +38,8 @@ function StriverA2ZSheetContent() {
   const [isWizardOpen, setIsWizardOpen] = useState(false);
   const [updatingProblemId, setUpdatingProblemId] = useState(null);
 
-  const fetchCurriculum = async () => {
+  const fetchCurriculum = useCallback(async () => {
     try {
-      setLoading(true);
       const res = await fetch('/api/curriculum');
       if (res.ok) {
         const data = await res.json();
@@ -58,11 +57,11 @@ function StriverA2ZSheetContent() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [initialTopicId]);
 
   useEffect(() => {
     fetchCurriculum();
-  }, [initialTopicId]);
+  }, [fetchCurriculum]);
 
   const toggleTopicExpand = (topicId) => {
     setExpandedTopics((prev) => {

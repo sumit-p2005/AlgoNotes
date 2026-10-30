@@ -33,14 +33,30 @@ export function CurrentProgressWizard({
 
   // State selections
   // Set of topic IDs marked as studied
-  const [selectedTopics, setSelectedTopics] = useState(new Set());
+  const [selectedTopics, setSelectedTopics] = useState(() => {
+    const set = new Set();
+    if (curriculumData?.topics) {
+      curriculumData.topics.forEach((t) => {
+        if (t.is_studied || t.completion_percent === 100) set.add(t.id);
+      });
+    }
+    return set;
+  });
   // Set of section IDs marked as completed
   const [selectedSections, setSelectedSections] = useState(new Set());
   // Map of problemId -> status ('Not started' | 'Attempted' | 'Solved' | 'Needs revision')
-  const [problemStatuses, setProblemStatuses] = useState({});
+  const [problemStatuses, setProblemStatuses] = useState(() => {
+    const statuses = {};
+    if (curriculumData?.problems) {
+      curriculumData.problems.forEach((p) => {
+        if (p.status && p.status !== 'Not started') statuses[p.id] = p.status;
+      });
+    }
+    return statuses;
+  });
   // Optional revision schedule toggle
   const [reviseExisting, setReviseExisting] = useState(true);
-  const [revisionStartDate, setRevisionStartDate] = useState(
+  const [revisionStartDate, setRevisionStartDate] = useState(() =>
     new Date().toISOString().split('T')[0]
   );
 
@@ -49,39 +65,39 @@ export function CurrentProgressWizard({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
 
-  // Initialize with any existing progress
+  // Sync when curriculumData loads if initially empty
   useEffect(() => {
-    if (curriculumData) {
-      const initialTopicSet = new Set();
-      const initialSectionSet = new Set();
-      const initialStatuses = {};
+    if (!curriculumData) return;
+    const initialTopicSet = new Set();
+    const initialStatuses = {};
 
-      if (curriculumData.topics) {
-        curriculumData.topics.forEach((t) => {
-          if (t.is_studied || t.completion_percent === 100) {
-            initialTopicSet.add(t.id);
-          }
-        });
-      }
-
-      if (curriculumData.problems) {
-        curriculumData.problems.forEach((p) => {
-          if (p.status && p.status !== 'Not started') {
-            initialStatuses[p.id] = p.status;
-          }
-        });
-      }
-
-      setSelectedTopics(initialTopicSet);
-      setProblemStatuses(initialStatuses);
+    if (curriculumData.topics) {
+      curriculumData.topics.forEach((t) => {
+        if (t.is_studied || t.completion_percent === 100) {
+          initialTopicSet.add(t.id);
+        }
+      });
     }
+
+    if (curriculumData.problems) {
+      curriculumData.problems.forEach((p) => {
+        if (p.status && p.status !== 'Not started') {
+          initialStatuses[p.id] = p.status;
+        }
+      });
+    }
+
+    const timer = setTimeout(() => {
+      setSelectedTopics((prev) => (prev.size === 0 ? initialTopicSet : prev));
+      setProblemStatuses((prev) => (Object.keys(prev).length === 0 ? initialStatuses : prev));
+    }, 0);
+
+    return () => clearTimeout(timer);
   }, [curriculumData]);
 
-  if (!isOpen) return null;
-
-  const topics = curriculumData?.topics || [];
-  const sections = curriculumData?.sections || [];
-  const problems = curriculumData?.problems || [];
+  const topics = useMemo(() => curriculumData?.topics || [], [curriculumData]);
+  const sections = useMemo(() => curriculumData?.sections || [], [curriculumData]);
+  const problems = useMemo(() => curriculumData?.problems || [], [curriculumData]);
 
   // Step 1: Topics Toggling
   const toggleTopic = (topicId) => {
@@ -148,6 +164,8 @@ export function CurrentProgressWizard({
     }
     return list;
   }, [problems, selectedTopics, selectedSections, activeStep3TopicId, searchQuery]);
+
+  if (!isOpen) return null;
 
   const setProblemStatus = (problemId, status) => {
     setProblemStatuses((prev) => ({
@@ -258,7 +276,12 @@ export function CurrentProgressWizard({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fade-in">
-      <div className="relative w-full max-w-4xl max-h-[90vh] flex flex-col rounded-2xl border border-[#232924] bg-[#0A0D0B] text-[#F5F5F0] shadow-2xl overflow-hidden">
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-label="Progress Setup Wizard"
+        className="relative w-full max-w-4xl max-h-[90vh] flex flex-col rounded-2xl border border-[#232924] bg-[#0A0D0B] text-[#F5F5F0] shadow-2xl overflow-hidden"
+      >
         
         {/* Top Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-[#1C221D] bg-[#090B0A]">
@@ -280,9 +303,11 @@ export function CurrentProgressWizard({
             </div>
           </div>
           <button
+            type="button"
             onClick={handleSkip}
             className="p-1.5 rounded-lg text-muted hover:text-foreground hover:bg-[#141815] transition-colors"
             title="Skip for now"
+            aria-label="Skip onboarding for now"
           >
             <X className="w-4 h-4" />
           </button>
@@ -845,3 +870,4 @@ export function CurrentProgressWizard({
     </div>
   );
 }
+

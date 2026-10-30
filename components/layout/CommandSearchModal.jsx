@@ -15,10 +15,14 @@ export function CommandSearchModal({ isOpen, onClose }) {
 
   useEffect(() => {
     if (isOpen) {
-      setTimeout(() => inputRef.current?.focus(), 50);
+      const timer = setTimeout(() => inputRef.current?.focus(), 50);
+      return () => clearTimeout(timer);
     } else {
-      setQuery('');
-      setResults({ problems: [], topics: [], patterns: [] });
+      const timer = setTimeout(() => {
+        setQuery('');
+        setResults({ problems: [], topics: [], patterns: [] });
+      }, 0);
+      return () => clearTimeout(timer);
     }
   }, [isOpen]);
 
@@ -39,10 +43,13 @@ export function CommandSearchModal({ isOpen, onClose }) {
 
   // Debounced search
   useEffect(() => {
-    if (!query.trim()) {
-      setResults({ problems: [], topics: [], patterns: [] });
-      setLoading(false);
-      return;
+    const trimmed = query.trim();
+    if (!trimmed) {
+      const timer = setTimeout(() => {
+        setResults({ problems: [], topics: [], patterns: [] });
+        setLoading(false);
+      }, 0);
+      return () => clearTimeout(timer);
     }
 
     const timer = setTimeout(async () => {
@@ -100,6 +107,9 @@ export function CommandSearchModal({ isOpen, onClose }) {
   return (
     <div className="fixed inset-0 z-50 flex items-start justify-center pt-16 sm:pt-24 px-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-150">
       <div
+        role="dialog"
+        aria-modal="true"
+        aria-label="Global Search"
         className="w-full max-w-xl rounded-xl border border-border bg-panel shadow-2xl overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
@@ -113,11 +123,14 @@ export function CommandSearchModal({ isOpen, onClose }) {
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search problems, topics, patterns, or notes... (Esc to close)"
             className="w-full bg-transparent text-sm text-foreground placeholder:text-muted focus:outline-none"
+            aria-label="Search query"
           />
           {query && (
             <button
+              type="button"
               onClick={() => setQuery('')}
               className="text-muted hover:text-foreground p-1 rounded-md"
+              aria-label="Clear search input"
             >
               <X className="w-4 h-4" />
             </button>

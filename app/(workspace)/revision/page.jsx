@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import Link from 'next/link';
 import {
   CalendarCheck2,
@@ -30,7 +30,7 @@ export default function RevisionPage() {
 
   const [curriculumDue, setCurriculumDue] = useState([]);
 
-  const fetchRevisionData = async () => {
+  const fetchRevisionData = useCallback(async () => {
     try {
       const supabase = createClient();
       const [{ data: schedData }, { data: histData }, { data: probData }, currRevRes] = await Promise.all([
@@ -54,11 +54,11 @@ export default function RevisionPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     fetchRevisionData();
-  }, []);
+  }, [fetchRevisionData]);
 
   const categorized = useMemo(() => {
     return categorizeReviews(schedules);

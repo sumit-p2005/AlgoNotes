@@ -29,6 +29,8 @@ export default function DashboardPage() {
   const [hasCompletedOnboarding, setHasCompletedOnboarding] = useState(true);
   const [loading, setLoading] = useState(true);
 
+  const [todayStr] = useState(() => new Date().toISOString().split('T')[0]);
+
   const loadData = async () => {
     try {
       const supabase = createClient();
@@ -70,7 +72,10 @@ export default function DashboardPage() {
   };
 
   useEffect(() => {
-    loadData();
+    const execute = async () => {
+      await loadData();
+    };
+    execute();
   }, []);
 
   // Compute metrics purely from real database state
@@ -86,8 +91,9 @@ export default function DashboardPage() {
 
     let streak = 0;
     if (uniqueDays.length > 0) {
-      const todayStr = new Date().toISOString().split('T')[0];
-      const yesterdayStr = new Date(Date.now() - 86400000).toISOString().split('T')[0];
+      const yesterdayDate = new Date(todayStr);
+      yesterdayDate.setDate(yesterdayDate.getDate() - 1);
+      const yesterdayStr = yesterdayDate.toISOString().split('T')[0];
 
       if (uniqueDays[0] === todayStr || uniqueDays[0] === yesterdayStr) {
         streak = 1;
@@ -111,7 +117,7 @@ export default function DashboardPage() {
       dueCount,
       streak,
     };
-  }, [problems, schedules, history]);
+  }, [problems, schedules, history, todayStr]);
 
   const recentProblems = useMemo(() => {
     return problems.slice(0, 5);

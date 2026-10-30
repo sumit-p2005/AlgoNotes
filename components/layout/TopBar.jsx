@@ -78,6 +78,7 @@ export function TopBar({ onToggleMobileMenu, dueCount = 0 }) {
           href="/revision"
           className="relative p-1.5 rounded-full text-muted hover:text-foreground transition-colors"
           title={`${dueCount} reviews due`}
+          aria-label={`${dueCount} reviews due`}
         >
           <Bell className="w-4 h-4" />
           {dueCount > 0 && (

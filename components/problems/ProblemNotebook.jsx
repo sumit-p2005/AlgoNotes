@@ -138,13 +138,15 @@ export function ProblemNotebook({
 
   const [activeTab, setActiveTab] = useState('notes');
   const [saveStatus, setSaveStatus] = useState('Saved');
-  const [scheduleData, setScheduleData] = useState(
-    initialProblem?.review_schedule || {
+  const [scheduleData, setScheduleData] = useState(() => {
+    if (initialProblem?.review_schedule) return initialProblem.review_schedule;
+    const init = initializeSchedule();
+    return {
       stage: 1,
-      next_review_at: new Date(Date.now() + 3 * 86400000).toISOString(),
-      days_left: 3,
-    }
-  );
+      next_review_at: init.nextReviewAt.toISOString(),
+      days_left: 1,
+    };
+  });
   const [copiedCode, setCopiedCode] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -266,8 +268,8 @@ export function ProblemNotebook({
                 problem_id: formData.id,
                 user_id: user.id,
                 stage: 1,
-                learning_date: new Date().toISOString(),
-                next_review_at: new Date(Date.now() + 3 * 86400000).toISOString(),
+                learning_date: sched.learningDate.toISOString(),
+                next_review_at: sched.nextReviewAt.toISOString(),
                 review_count: 1,
                 last_rating: 'Good',
                 updated_at: new Date().toISOString(),
@@ -484,6 +486,7 @@ export function ProblemNotebook({
               onClick={toggleBookmark}
               className="p-1.5 rounded-lg border border-border bg-panel hover:bg-elevated transition-colors cursor-pointer"
               title={formData.is_bookmarked ? 'Bookmarked' : 'Add bookmark'}
+              aria-label={formData.is_bookmarked ? 'Remove bookmark' : 'Add bookmark'}
             >
               <Star
                 className={`w-4 h-4 ${
@@ -501,6 +504,7 @@ export function ProblemNotebook({
                 disabled={isDeleting}
                 className="p-1.5 rounded-lg border border-border bg-panel hover:bg-red-500/10 text-muted hover:text-red-400 transition-colors cursor-pointer"
                 title="Delete note"
+                aria-label="Delete note"
               >
                 <Trash2 className="w-4 h-4" />
               </button>
@@ -543,6 +547,7 @@ export function ProblemNotebook({
                 type="button"
                 onClick={() => handleRemoveTag(tag)}
                 className="hover:text-red-400 text-muted"
+                aria-label={`Remove tag ${tag}`}
               >
                 ×
               </button>
@@ -1030,6 +1035,7 @@ export function ProblemNotebook({
                 type="button"
                 className="p-1 rounded hover:bg-elevated hover:text-foreground"
                 title="Bold"
+                aria-label="Format Bold"
               >
                 <Bold className="w-3.5 h-3.5" />
               </button>
@@ -1037,6 +1043,7 @@ export function ProblemNotebook({
                 type="button"
                 className="p-1 rounded hover:bg-elevated hover:text-foreground"
                 title="Italic"
+                aria-label="Format Italic"
               >
                 <Italic className="w-3.5 h-3.5" />
               </button>
@@ -1044,6 +1051,7 @@ export function ProblemNotebook({
                 type="button"
                 className="p-1 rounded hover:bg-elevated hover:text-foreground"
                 title="Bullet list"
+                aria-label="Format Bullet list"
               >
                 <List className="w-3.5 h-3.5" />
               </button>
@@ -1051,6 +1059,7 @@ export function ProblemNotebook({
                 type="button"
                 className="p-1 rounded hover:bg-elevated hover:text-foreground"
                 title="Numbered list"
+                aria-label="Format Numbered list"
               >
                 <ListOrdered className="w-3.5 h-3.5" />
               </button>
@@ -1058,6 +1067,7 @@ export function ProblemNotebook({
                 type="button"
                 className="p-1 rounded hover:bg-elevated hover:text-foreground"
                 title="Code inline"
+                aria-label="Format Code inline"
               >
                 <Code className="w-3.5 h-3.5" />
               </button>

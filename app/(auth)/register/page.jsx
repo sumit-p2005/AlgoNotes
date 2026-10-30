@@ -26,6 +26,11 @@ export default function RegisterPage() {
     setErrorMessage('');
     setSuccessMessage('');
 
+    if (password.length < 6) {
+      setErrorMessage('Password must be at least 6 characters.');
+      return;
+    }
+
     if (password !== confirmPassword) {
       setErrorMessage('Passwords do not match.');
       return;
@@ -133,6 +138,8 @@ export default function RegisterPage() {
             value={fullName}
             onChange={(e) => setFullName(e.target.value)}
             placeholder="Full Name"
+            autoComplete="name"
+            aria-label="Full Name"
             className="w-full pl-9 pr-3 py-2 rounded-xl border border-border bg-panel text-xs text-foreground placeholder:text-muted focus:outline-none focus:ring-1 focus:ring-accent"
           />
         </div>
@@ -145,6 +152,8 @@ export default function RegisterPage() {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             placeholder="Email address"
+            autoComplete="email"
+            aria-label="Email address"
             className="w-full pl-9 pr-3 py-2 rounded-xl border border-border bg-panel text-xs text-foreground placeholder:text-muted focus:outline-none focus:ring-1 focus:ring-accent"
           />
         </div>
@@ -157,6 +166,8 @@ export default function RegisterPage() {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             placeholder="Password (min 6 characters)"
+            autoComplete="new-password"
+            aria-label="Password"
             className="w-full pl-9 pr-3 py-2 rounded-xl border border-border bg-panel text-xs text-foreground placeholder:text-muted focus:outline-none focus:ring-1 focus:ring-accent"
           />
         </div>
@@ -169,6 +180,8 @@ export default function RegisterPage() {
             value={confirmPassword}
             onChange={(e) => setConfirmPassword(e.target.value)}
             placeholder="Confirm password"
+            autoComplete="new-password"
+            aria-label="Confirm password"
             className="w-full pl-9 pr-3 py-2 rounded-xl border border-border bg-panel text-xs text-foreground placeholder:text-muted focus:outline-none focus:ring-1 focus:ring-accent"
           />
         </div>

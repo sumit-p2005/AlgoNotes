@@ -10,28 +10,33 @@ const ThemeContext = createContext({
 });
 
 export function ThemeProvider({ children }) {
-  const [theme, setThemeState] = useState('system');
-  const [resolvedTheme, setResolvedTheme] = useState('dark');
+  const [theme, setThemeState] = useState(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        return localStorage.getItem('algonotes_theme') || 'system';
+      } catch {}
+    }
+    return 'system';
+  });
+
+  const [resolvedTheme, setResolvedTheme] = useState(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const stored = localStorage.getItem('algonotes_theme') || 'system';
+        const systemDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        return stored === 'dark' || (stored === 'system' && systemDark) ? 'dark' : 'light';
+      } catch {}
+    }
+    return 'dark';
+  });
+
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    try {
-      const stored = localStorage.getItem('algonotes_theme') || 'system';
-      setThemeState(stored);
-
-      const systemDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-      const initialResolved = stored === 'dark' || (stored === 'system' && systemDark) ? 'dark' : 'light';
-      setResolvedTheme(initialResolved);
-
-      if (initialResolved === 'dark') {
-        document.documentElement.classList.add('dark');
-      } else {
-        document.documentElement.classList.remove('dark');
-      }
-    } catch {
-      // ignore
-    }
-    setMounted(true);
+    const timer = setTimeout(() => {
+      setMounted(true);
+    }, 0);
+    return () => clearTimeout(timer);
   }, []);
 
   // Listen to system theme changes if theme === 'system'

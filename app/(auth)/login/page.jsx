@@ -1,20 +1,25 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, Suspense } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Mail, Lock, AlertCircle } from 'lucide-react';
+import { sanitizeRedirectUrl } from '@/lib/utils/security';
 
-export default function LoginPage() {
+function LoginForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
+
+  const nextParam = searchParams.get('next');
+  const targetPath = sanitizeRedirectUrl(nextParam, '/dashboard');
 
   const isSupabaseConfigured =
     process.env.NEXT_PUBLIC_SUPABASE_URL &&
@@ -25,8 +30,8 @@ export default function LoginPage() {
     setErrorMessage('');
 
     if (!isSupabaseConfigured) {
-      // In local mode without Supabase, proceed to dashboard
-      router.push('/dashboard');
+      // In local mode without Supabase, proceed to target
+      router.push(targetPath);
       return;
     }
 
@@ -41,7 +46,7 @@ export default function LoginPage() {
       if (error) {
         setErrorMessage(error.message);
       } else {
-        router.push('/dashboard');
+        router.push(targetPath);
         router.refresh();
       }
     } catch (err) {
@@ -114,6 +119,8 @@ export default function LoginPage() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="Email address"
+              autoComplete="email"
+              aria-label="Email address"
               className="w-full pl-9 pr-3 py-2 rounded-xl border border-border bg-panel text-xs text-foreground placeholder:text-muted focus:outline-none focus:ring-1 focus:ring-accent"
             />
           </div>
@@ -128,6 +135,8 @@ export default function LoginPage() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="Password"
+              autoComplete="current-password"
+              aria-label="Password"
               className="w-full pl-9 pr-3 py-2 rounded-xl border border-border bg-panel text-xs text-foreground placeholder:text-muted focus:outline-none focus:ring-1 focus:ring-accent"
             />
           </div>
@@ -196,5 +205,13 @@ export default function LoginPage() {
         </Link>
       </div>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={<div className="w-full max-w-sm mx-auto text-center py-12 text-xs text-muted">Loading...</div>}>
+      <LoginForm />
+    </Suspense>
   );
 }

@@ -143,3 +143,4 @@ console.log(`- Sections: ${sections.length}`);
 console.log(`- Problems: ${problems.length}`);
 console.log(`- JSON written to lib/curriculum/striver-a2z.json`);
 console.log(`- SQL written to supabase/migrations/003_seed_striver_curriculum.sql`);
+

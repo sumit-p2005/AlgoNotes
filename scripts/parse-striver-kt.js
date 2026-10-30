@@ -86,3 +86,4 @@ for (const [key, sec] of sectionsMap) {
 // Sample 5 problems
 console.log('\nSample 5 Problems:');
 problems.slice(0, 5).forEach(p => console.log(`  #${p.id} [${p.difficulty}] ${p.title} -> ${p.sectionTitle}`));
+

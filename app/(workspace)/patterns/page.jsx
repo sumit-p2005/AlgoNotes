@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import {
   Layers,
@@ -40,7 +40,7 @@ export default function PatternsPage() {
     complexity_considerations: '',
   });
 
-  const fetchPatterns = async () => {
+  const fetchPatterns = useCallback(async () => {
     try {
       const supabase = createClient();
       const { data, error } = await supabase
@@ -50,9 +50,7 @@ export default function PatternsPage() {
 
       if (data && data.length > 0) {
         setPatterns(data);
-        if (!selectedPattern) {
-          setSelectedPattern(data[0]);
-        }
+        setSelectedPattern((prev) => prev || data[0]);
       } else {
         // Fallback default patterns for initial view
         const defaults = [
@@ -80,18 +78,18 @@ export default function PatternsPage() {
           },
         ];
         setPatterns(defaults);
-        setSelectedPattern(defaults[0]);
+        setSelectedPattern((prev) => prev || defaults[0]);
       }
     } catch (err) {
       console.error('Failed to load patterns:', err);
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     fetchPatterns();
-  }, []);
+  }, [fetchPatterns]);
 
   // Fetch associated problems when selected pattern changes
   useEffect(() => {
