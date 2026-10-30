@@ -13,3 +13,4 @@ begin
       check (status in ('Not started', 'Saved', 'Attempted', 'Solved', 'Needs revision'));
   end if;
 end $$;
+
