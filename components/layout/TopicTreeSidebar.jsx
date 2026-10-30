@@ -23,7 +23,10 @@ import { cn } from '@/lib/utils/cn';
 export function TopicTreeSidebar() {
   const [search, setSearch] = useState('');
   const [userId, setUserId] = useState(null);
-  const [expandedTopics, setExpandedTopics] = useState({ 'step-3-solve-problems-on-arrays': true });
+  const [expandedTopics, setExpandedTopics] = useState(() => {
+    const firstId = striverA2ZData?.topics?.[0]?.id;
+    return firstId ? { [firstId]: true } : {};
+  });
   const [expandedSubtopics, setExpandedSubtopics] = useState({});
   const [userProgressMap, setUserProgressMap] = useState({});
   const [userNotesMap, setUserNotesMap] = useState({});
@@ -36,8 +39,8 @@ export function TopicTreeSidebar() {
     async function loadUserData() {
       try {
         const supabase = createClient();
-        const { data: { user } } = await supabase.auth.getUser();
-        const uId = user?.id || null;
+        const { data: authData } = await supabase.auth.getUser().catch(() => ({ data: {} }));
+        const uId = authData?.user?.id || null;
         setUserId(uId);
 
         // Load saved folder expansion state from userStorage
@@ -54,21 +57,37 @@ export function TopicTreeSidebar() {
             { data: userTopics },
             { data: userProbs },
           ] = await Promise.all([
-            supabase.from('user_curriculum_progress').select('problem_id, status').eq('user_id', uId),
-            supabase.from('user_curriculum_notes').select('problem_id').eq('user_id', uId),
-            supabase.from('topics').select('*').order('order_index', { ascending: true }),
-            supabase.from('problems').select('id, title, topic_id, difficulty, status').order('title', { ascending: true }),
+            supabase
+              .from('user_curriculum_progress')
+              .select('problem_id, status')
+              .eq('user_id', uId)
+              .catch(() => ({ data: [] })),
+            supabase
+              .from('user_curriculum_notes')
+              .select('problem_id')
+              .eq('user_id', uId)
+              .catch(() => ({ data: [] })),
+            supabase
+              .from('topics')
+              .select('*')
+              .order('order_index', { ascending: true })
+              .catch(() => ({ data: [] })),
+            supabase
+              .from('problems')
+              .select('id, title, topic_id, difficulty, status')
+              .order('title', { ascending: true })
+              .catch(() => ({ data: [] })),
           ]);
 
           const pMap = {};
           (progData || []).forEach((p) => {
-            pMap[p.problem_id] = p.status;
+            if (p?.problem_id) pMap[p.problem_id] = p.status;
           });
           setUserProgressMap(pMap);
 
           const nMap = {};
           (notesData || []).forEach((n) => {
-            nMap[n.problem_id] = true;
+            if (n?.problem_id) nMap[n.problem_id] = true;
           });
           setUserNotesMap(nMap);
 
@@ -87,12 +106,14 @@ export function TopicTreeSidebar() {
     // 1. Build curriculum tree from striver-a2z.json
     const sectionsByTopic = {};
     (striverA2ZData?.sections || []).forEach((sec) => {
+      if (!sec?.topic_id) return;
       if (!sectionsByTopic[sec.topic_id]) sectionsByTopic[sec.topic_id] = [];
       sectionsByTopic[sec.topic_id].push(sec);
     });
 
     const problemsBySection = {};
     (striverA2ZData?.problems || []).forEach((prob) => {
+      if (!prob?.section_id) return;
       if (!problemsBySection[prob.section_id]) problemsBySection[prob.section_id] = [];
       problemsBySection[prob.section_id].push(prob);
     });
@@ -100,12 +121,12 @@ export function TopicTreeSidebar() {
     const curriculumTree = (striverA2ZData?.topics || []).map((topic) => {
       const subtopics = (sectionsByTopic[topic.id] || []).map((sec) => ({
         id: sec.id,
-        name: sec.title,
+        name: sec.title || 'Untitled Section',
         problems: (problemsBySection[sec.id] || []).map((p) => ({
           id: p.id,
-          title: p.title,
-          difficulty: p.difficulty,
-          problemNumber: p.problem_number,
+          title: p.title || 'Untitled Problem',
+          difficulty: p.difficulty || 'Medium',
+          problemNumber: p.problem_number || '',
           isCurriculum: true,
           status: userProgressMap[p.id] || 'available',
           hasNote: !!userNotesMap[p.id],
@@ -116,7 +137,7 @@ export function TopicTreeSidebar() {
 
       return {
         id: topic.id,
-        name: topic.title,
+        name: topic.title || 'Untitled Topic',
         subtopics,
         totalProblems,
         isCustom: false,
@@ -136,8 +157,8 @@ export function TopicTreeSidebar() {
             name: 'All Custom Notes',
             problems: customProblems.map((p) => ({
               id: p.id,
-              title: p.title,
-              difficulty: p.difficulty,
+              title: p.title || 'Untitled Note',
+              difficulty: p.difficulty || 'Medium',
               problemNumber: '',
               isCurriculum: false,
               status: (p.status || 'Saved').toLowerCase(),
@@ -219,24 +240,28 @@ export function TopicTreeSidebar() {
       <div className="flex-1 overflow-y-auto p-2 space-y-1">
         {treeData.map((topic) => {
           // Check if topic or any subtopic/problem matches search
-          const topicMatches = !cleanQuery || topic.name.toLowerCase().includes(cleanQuery);
-          const matchingSubtopics = topic.subtopics.map((sub) => {
-            const subMatches = !cleanQuery || sub.name.toLowerCase().includes(cleanQuery);
-            const filteredProbs = cleanQuery
-              ? sub.problems.filter(
-                  (p) =>
-                    p.title.toLowerCase().includes(cleanQuery) ||
-                    (p.problemNumber && String(p.problemNumber).includes(cleanQuery))
-                )
-              : sub.problems;
+          const topicMatches =
+            !cleanQuery || (topic.name || '').toLowerCase().includes(cleanQuery);
+          const matchingSubtopics = (topic.subtopics || [])
+            .map((sub) => {
+              const subMatches =
+                !cleanQuery || (sub.name || '').toLowerCase().includes(cleanQuery);
+              const filteredProbs = cleanQuery
+                ? (sub.problems || []).filter(
+                    (p) =>
+                      (p.title || '').toLowerCase().includes(cleanQuery) ||
+                      (p.problemNumber && String(p.problemNumber).includes(cleanQuery))
+                  )
+                : sub.problems || [];
 
-            return {
-              ...sub,
-              hasMatchingProbs: filteredProbs.length > 0,
-              problems: filteredProbs,
-              shouldShow: subMatches || filteredProbs.length > 0,
-            };
-          }).filter((s) => s.shouldShow);
+              return {
+                ...sub,
+                hasMatchingProbs: filteredProbs.length > 0,
+                problems: filteredProbs,
+                shouldShow: subMatches || filteredProbs.length > 0,
+              };
+            })
+            .filter((s) => s.shouldShow);
 
           if (!topicMatches && matchingSubtopics.length === 0) return null;
 
@@ -284,7 +309,7 @@ export function TopicTreeSidebar() {
                           className="w-full flex items-center justify-between gap-1.5 px-2 py-1 rounded-md hover:bg-elevated text-muted hover:text-foreground transition-colors text-left cursor-pointer"
                         >
                           <div className="flex items-center gap-1.5 min-w-0">
-                            {sub.problems.length > 0 ? (
+                            {sub.problems && sub.problems.length > 0 ? (
                               isSubExpanded ? (
                                 <ChevronDown className="w-3 h-3 text-muted shrink-0" />
                               ) : (
@@ -296,12 +321,12 @@ export function TopicTreeSidebar() {
                             <span className="truncate text-[11px] font-medium">{sub.name}</span>
                           </div>
                           <span className="text-[9px] text-muted/70 font-mono">
-                            {sub.problems.length}
+                            {sub.problems ? sub.problems.length : 0}
                           </span>
                         </button>
 
                         {/* Problems List under this Subtopic */}
-                        {isSubExpanded && sub.problems.length > 0 && (
+                        {isSubExpanded && sub.problems && sub.problems.length > 0 && (
                           <div className="pl-4 space-y-0.5 border-l border-border/40 ml-2 my-0.5">
                             {sub.problems.map((prob) => {
                               const isCurrent =
@@ -346,7 +371,10 @@ export function TopicTreeSidebar() {
 
                                   <div className="flex items-center gap-1 shrink-0">
                                     {prob.hasNote && (
-                                      <Edit3 className="w-2.5 h-2.5 text-amber-400/80" title="Notes created" />
+                                      <Edit3
+                                        className="w-2.5 h-2.5 text-amber-400/80"
+                                        title="Notes created"
+                                      />
                                     )}
                                     {prob.difficulty && (
                                       <span

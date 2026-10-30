@@ -1,14 +1,12 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { getTopicTreeNav, getCurriculumNav } from '@/lib/utils/userStorage';
 import striverA2ZData from '@/lib/curriculum/striver-a2z.json';
-import ProblemDetailPage from './[id]/page';
+import { ProblemDetailView } from '@/components/problems/ProblemDetailView';
 
 export default function AllProblemsWorkspacePage() {
-  const router = useRouter();
   const [activeProblemId, setActiveProblemId] = useState(null);
   const [loading, setLoading] = useState(true);
 
@@ -16,8 +14,8 @@ export default function AllProblemsWorkspacePage() {
     async function determineActiveProblem() {
       try {
         const supabase = createClient();
-        const { data: { user } } = await supabase.auth.getUser();
-        const uId = user?.id || null;
+        const { data: authData } = await supabase.auth.getUser().catch(() => ({ data: {} }));
+        const uId = authData?.user?.id || null;
 
         // 1. Check user navigation preferences
         const nav = getTopicTreeNav(uId);
@@ -36,7 +34,8 @@ export default function AllProblemsWorkspacePage() {
             .from('problems')
             .select('id')
             .eq('user_id', uId)
-            .limit(1);
+            .limit(1)
+            .catch(() => ({ data: [] }));
 
           if (userProbs && userProbs.length > 0) {
             setActiveProblemId(userProbs[0].id);
@@ -45,7 +44,7 @@ export default function AllProblemsWorkspacePage() {
           }
         }
 
-        // 3. Fallback to first problem in curriculum
+        // 3. Fallback to first problem in curriculum or 3Sum
         const firstProblem = striverA2ZData?.problems?.[0];
         setActiveProblemId(firstProblem?.id || '3sum');
       } catch (err) {
@@ -68,6 +67,6 @@ export default function AllProblemsWorkspacePage() {
     );
   }
 
-  // Render active problem notebook in Column 3
-  return <ProblemDetailPage params={Promise.resolve({ id: activeProblemId })} />;
+  // Render active problem notebook directly with plain string id (no inline promise)
+  return <ProblemDetailView problemId={activeProblemId} />;
 }
