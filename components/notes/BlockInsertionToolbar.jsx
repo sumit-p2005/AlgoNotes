@@ -125,3 +125,4 @@ export function BlockInsertionToolbar({ onInsertBlock, className = '', compact =
     </div>
   );
 }
+

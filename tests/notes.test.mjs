@@ -132,3 +132,4 @@ test('My Notes - Image upload validation checks', () => {
   assert.ok(validSize <= MAX_FILE_SIZE);
   assert.equal(oversized <= MAX_FILE_SIZE, false);
 });
+

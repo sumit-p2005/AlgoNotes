@@ -164,3 +164,4 @@ create policy "Note images are publicly viewable"
   on storage.objects for select
   to public
   using (bucket_id = 'user-note-images');
+

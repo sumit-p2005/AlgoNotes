@@ -41,3 +41,4 @@ export function HeadingBlock({ content = {}, onChange, autoFocus = false }) {
     </div>
   );
 }
+

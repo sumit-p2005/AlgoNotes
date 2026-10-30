@@ -190,3 +190,4 @@ export function TextBlock({ content = {}, onChange, autoFocus = false }) {
     </div>
   );
 }
+

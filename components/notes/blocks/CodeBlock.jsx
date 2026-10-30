@@ -34,3 +34,4 @@ export function CodeBlock({ content = {}, onChange }) {
     </div>
   );
 }
+

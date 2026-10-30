@@ -41,3 +41,4 @@ export function SubheadingBlock({ content = {}, onChange, autoFocus = false }) {
     </div>
   );
 }
+
