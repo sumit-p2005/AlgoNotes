@@ -3,7 +3,12 @@
 import React from 'react';
 import { CodeEditor } from '@/components/editor/CodeEditor';
 
-export function CodeBlock({ content = {}, onChange }) {
+export function CodeBlock({
+  content = {},
+  onChange,
+  autoFocus = false,
+  onFocus,
+}) {
   const code = content.code || '';
   const language = content.language || 'cpp';
 
@@ -22,14 +27,16 @@ export function CodeBlock({ content = {}, onChange }) {
   };
 
   return (
-    <div className="w-full my-2">
+    <div className="w-full mt-1 mb-2.5 sm:mb-3 first:mt-0" onFocus={onFocus}>
       <CodeEditor
         value={code}
         onChange={handleCodeChange}
         language={language}
         onLanguageChange={handleLanguageChange}
+        placeholder="Write your Code"
+        autoFocus={autoFocus}
         minHeight="140px"
-        className="shadow-sm"
+        className="shadow-xs"
       />
     </div>
   );

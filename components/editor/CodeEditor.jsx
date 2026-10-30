@@ -25,6 +25,7 @@ export function CodeEditor({
   placeholder = 'Write your Code',
   onLanguageChange,
   readOnly = false,
+  autoFocus = false,
   minHeight = '320px',
   className = '',
 }) {
@@ -135,6 +136,7 @@ export function CodeEditor({
           extensions={extensions}
           onChange={onChange}
           readOnly={readOnly}
+          autoFocus={autoFocus}
           basicSetup={{
             lineNumbers: true,
             highlightActiveLine: !readOnly,

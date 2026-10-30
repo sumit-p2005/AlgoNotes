@@ -10,7 +10,13 @@ import {
   Code,
 } from 'lucide-react';
 
-export function TextBlock({ content = {}, onChange, autoFocus = false }) {
+export function TextBlock({
+  content = {},
+  onChange,
+  autoFocus = false,
+  onFocus,
+  onDeleteEmpty,
+}) {
   const textareaRef = useRef(null);
   const text = content.text || '';
   const [isFocused, setIsFocused] = useState(false);
@@ -19,7 +25,7 @@ export function TextBlock({ content = {}, onChange, autoFocus = false }) {
     const el = textareaRef.current;
     if (el) {
       el.style.height = 'auto';
-      el.style.height = `${Math.max(el.scrollHeight, 60)}px`;
+      el.style.height = `${el.scrollHeight}px`;
     }
   };
 
@@ -30,6 +36,10 @@ export function TextBlock({ content = {}, onChange, autoFocus = false }) {
   useEffect(() => {
     if (autoFocus && textareaRef.current) {
       textareaRef.current.focus();
+      textareaRef.current.setSelectionRange(
+        textareaRef.current.value.length,
+        textareaRef.current.value.length
+      );
     }
   }, [autoFocus]);
 
@@ -175,17 +185,26 @@ export function TextBlock({ content = {}, onChange, autoFocus = false }) {
 
       <textarea
         ref={textareaRef}
-        rows={2}
+        rows={1}
         value={text}
-        onFocus={() => setIsFocused(true)}
+        onFocus={() => {
+          setIsFocused(true);
+          onFocus?.();
+        }}
         onBlur={() => setIsFocused(false)}
+        onKeyDown={(e) => {
+          if (e.key === 'Backspace' && !text) {
+            e.preventDefault();
+            onDeleteEmpty?.();
+          }
+        }}
         onChange={(e) => {
           onChange({ ...content, text: e.target.value });
           adjustHeight();
         }}
         placeholder="Write text, paragraph, explanation, or notes... (Formatting shortcuts supported)"
         aria-label="Text block content"
-        className="w-full resize-none overflow-hidden bg-transparent text-sm sm:text-base text-foreground/90 placeholder:text-muted/40 focus:outline-none leading-relaxed"
+        className="w-full resize-none overflow-hidden bg-transparent text-sm sm:text-base text-foreground/90 placeholder:text-muted/30 focus:outline-none leading-[1.6] min-h-[26px]"
       />
     </div>
   );

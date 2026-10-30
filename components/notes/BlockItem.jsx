@@ -21,11 +21,16 @@ export function BlockItem({
   block,
   index,
   totalBlocks,
+  blockNumber = null,
+  isFocused = false,
   onUpdateContent,
   onDeleteBlock,
   onDuplicateBlock,
   onMoveBlock,
   onInsertBelow,
+  onBlockFocus,
+  onEnterNewBlock,
+  onDeleteEmptyBlock,
 }) {
   const [showInserter, setShowInserter] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
@@ -36,6 +41,11 @@ export function BlockItem({
         return (
           <HeadingBlock
             content={block.content}
+            blockNumber={blockNumber}
+            autoFocus={isFocused}
+            onFocus={() => onBlockFocus?.(block.id)}
+            onEnter={() => onEnterNewBlock?.(index)}
+            onDeleteEmpty={() => onDeleteEmptyBlock?.(block.id, index)}
             onChange={(newContent) => onUpdateContent(block.id, newContent)}
           />
         );
@@ -43,6 +53,11 @@ export function BlockItem({
         return (
           <SubheadingBlock
             content={block.content}
+            blockNumber={blockNumber}
+            autoFocus={isFocused}
+            onFocus={() => onBlockFocus?.(block.id)}
+            onEnter={() => onEnterNewBlock?.(index)}
+            onDeleteEmpty={() => onDeleteEmptyBlock?.(block.id, index)}
             onChange={(newContent) => onUpdateContent(block.id, newContent)}
           />
         );
@@ -50,6 +65,9 @@ export function BlockItem({
         return (
           <TextBlock
             content={block.content}
+            autoFocus={isFocused}
+            onFocus={() => onBlockFocus?.(block.id)}
+            onDeleteEmpty={() => onDeleteEmptyBlock?.(block.id, index)}
             onChange={(newContent) => onUpdateContent(block.id, newContent)}
           />
         );
@@ -57,6 +75,8 @@ export function BlockItem({
         return (
           <CodeBlock
             content={block.content}
+            autoFocus={isFocused}
+            onFocus={() => onBlockFocus?.(block.id)}
             onChange={(newContent) => onUpdateContent(block.id, newContent)}
           />
         );
@@ -69,7 +89,7 @@ export function BlockItem({
         );
       default:
         return (
-          <div className="p-3 text-xs text-rose-500 bg-rose-500/10 rounded-lg">
+          <div className="p-2 text-xs text-rose-500 bg-rose-500/10 rounded-lg">
             Unknown block type: {block.block_type}
           </div>
         );
@@ -80,13 +100,15 @@ export function BlockItem({
     <div
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
-      className="relative group rounded-xl p-2 sm:p-3 transition-colors border border-transparent hover:border-border/60 hover:bg-panel/30"
+      className="relative group px-1 sm:px-2 py-0.5 rounded-lg transition-colors hover:bg-panel/20"
     >
       {/* Top/Left Floating Action Handle */}
       <div
         className={cn(
-          'absolute -left-2 sm:-left-8 top-2 flex items-center gap-0.5 bg-panel border border-border rounded-lg shadow-md p-0.5 transition-opacity z-10',
-          isHovered ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
+          'absolute -left-2 sm:-left-9 top-1 flex items-center gap-0.5 bg-panel border border-border rounded-lg shadow-sm p-0.5 transition-opacity z-10',
+          isHovered || isFocused
+            ? 'opacity-100 pointer-events-auto'
+            : 'opacity-0 pointer-events-none group-focus-within:opacity-100 group-focus-within:pointer-events-auto'
         )}
       >
         {/* Move Up */}
@@ -140,27 +162,27 @@ export function BlockItem({
       <div className="w-full">{renderBlockContent()}</div>
 
       {/* Quick Add Inserter Handle Below */}
-      <div className="relative flex items-center justify-center h-4 my-1 opacity-0 group-hover:opacity-100 transition-opacity">
+      <div className="relative flex items-center justify-center h-2 my-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
         <div className="absolute inset-0 flex items-center">
-          <div className="w-full border-t border-border/40" />
+          <div className="w-full border-t border-border/30" />
         </div>
         <button
           type="button"
           onClick={() => setShowInserter(!showInserter)}
-          className="relative z-10 flex items-center gap-1 px-2 py-0.5 rounded-full bg-panel border border-border/80 text-[10px] font-bold text-muted hover:text-foreground hover:border-accent transition-colors"
+          className="relative z-10 flex items-center gap-1 px-2 py-0.2 rounded-full bg-panel border border-border text-[9px] font-bold text-muted hover:text-foreground hover:border-accent transition-colors"
           title="Insert block here"
           aria-label="Insert block below"
         >
-          <Plus className="w-3 h-3 text-accent" />
+          <Plus className="w-2.5 h-2.5 text-accent" />
           <span>Insert Block</span>
         </button>
       </div>
 
       {/* Embedded Inserter Toolbar if toggled */}
       {showInserter && (
-        <div className="my-2 animate-in fade-in zoom-in-95 duration-100">
+        <div className="my-1.5 animate-in fade-in zoom-in-95 duration-100">
           <BlockInsertionToolbar
-            compact
+            className="my-1"
             onInsertBlock={(type) => {
               onInsertBelow(index, type);
               setShowInserter(false);

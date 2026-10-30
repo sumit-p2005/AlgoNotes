@@ -52,7 +52,7 @@ const TOOLS = [
   },
 ];
 
-export function BlockInsertionToolbar({ onInsertBlock, className = '', isDocked = false }) {
+export function BlockInsertionToolbar({ onInsertBlock, className = '', isDocked = false, activeBlockType = null }) {
   return (
     <div
       className={cn(
@@ -73,16 +73,31 @@ export function BlockInsertionToolbar({ onInsertBlock, className = '', isDocked 
         <div className="flex items-center gap-1">
           {TOOLS.map((t) => {
             const Icon = t.icon;
+            const isActive = activeBlockType === t.type;
             return (
               <button
                 key={t.type}
                 type="button"
+                onMouseDown={(e) => {
+                  // Prevent stealing focus before insertion
+                  e.preventDefault();
+                }}
                 onClick={() => onInsertBlock(t.type)}
-                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs font-semibold text-muted hover:text-foreground hover:bg-elevated transition-all border border-transparent hover:border-border cursor-pointer select-none group"
+                className={cn(
+                  'flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs font-semibold transition-all border cursor-pointer select-none group',
+                  isActive
+                    ? 'bg-accent/15 border-accent/40 text-accent font-bold shadow-xs'
+                    : 'text-muted hover:text-foreground hover:bg-elevated border-transparent hover:border-border'
+                )}
                 title={t.description}
                 aria-label={`Insert ${t.label} block`}
               >
-                <Icon className="w-3.5 h-3.5 text-accent transition-transform group-hover:scale-110" />
+                <Icon
+                  className={cn(
+                    'w-3.5 h-3.5 text-accent transition-transform group-hover:scale-110',
+                    isActive && 'scale-110 text-accent'
+                  )}
+                />
                 <span>{t.label}</span>
               </button>
             );

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useRef, useEffect } from 'react';
+import React, { useRef, useEffect, useState, useMemo } from 'react';
 import {
   RotateCcw,
   Check,
@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { BlockItem } from './BlockItem';
 import { BlockInsertionToolbar, BLOCK_TYPES } from './BlockInsertionToolbar';
+import { calculateBlockNumbers } from '@/lib/utils/noteNumbering';
 import { cn } from '@/lib/utils/cn';
 
 function getInitialBlockContent(type) {
@@ -60,6 +61,44 @@ export function NoteCanvas({
   onRedo,
 }) {
   const titleInputRef = useRef(null);
+  const rawBlocks = note?.blocks;
+  const blocks = useMemo(() => rawBlocks || [], [rawBlocks]);
+  const [activeBlockId, setActiveBlockId] = useState(null);
+  const [focusedBlockId, setFocusedBlockId] = useState(null);
+
+  // Dynamic automatic hierarchical numbering (H1: 1, 2, 3... H2: 1.1, 1.2, 2.1...)
+  const blockNumbers = useMemo(() => calculateBlockNumbers(blocks), [blocks]);
+
+  // Global Undo / Redo Keyboard Shortcuts
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z') {
+        if (e.shiftKey) {
+          e.preventDefault();
+          if (canRedo) onRedo?.();
+        } else {
+          e.preventDefault();
+          if (canUndo) onUndo?.();
+        }
+      } else if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'y') {
+        e.preventDefault();
+        if (canRedo) onRedo?.();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [canUndo, canRedo, onUndo, onRedo]);
+
+  // Clear focus signal after block has mounted and received focus
+  useEffect(() => {
+    if (focusedBlockId) {
+      const timer = setTimeout(() => {
+        setFocusedBlockId(null);
+      }, 500);
+      return () => clearTimeout(timer);
+    }
+  }, [focusedBlockId]);
 
   if (!note) {
     return (
@@ -73,8 +112,6 @@ export function NoteCanvas({
     );
   }
 
-  const blocks = note.blocks || [];
-
   // Block Mutation Handlers
   const handleUpdateContent = (blockId, newContent) => {
     const updated = blocks.map((b) =>
@@ -86,6 +123,9 @@ export function NoteCanvas({
   const handleDeleteBlock = (blockId) => {
     const updated = blocks.filter((b) => b.id !== blockId);
     onUpdateBlocks(updated);
+    if (activeBlockId === blockId) {
+      setActiveBlockId(null);
+    }
   };
 
   const handleDuplicateBlock = (blockId) => {
@@ -100,6 +140,8 @@ export function NoteCanvas({
     const updated = [...blocks];
     updated.splice(idx + 1, 0, duplicate);
     onUpdateBlocks(updated);
+    setActiveBlockId(duplicate.id);
+    setFocusedBlockId(duplicate.id);
   };
 
   const handleMoveBlock = (fromIndex, toIndex) => {
@@ -115,12 +157,46 @@ export function NoteCanvas({
     const updated = [...blocks];
     updated.splice(index + 1, 0, newBlock);
     onUpdateBlocks(updated);
+    setActiveBlockId(newBlock.id);
+    setFocusedBlockId(newBlock.id);
   };
 
+  // Append or insert after current active block with automatic focus
   const handleAppendBlock = (blockType) => {
-    const newBlock = createTempBlock(blockType, blocks.length + 1);
-    onUpdateBlocks([...blocks, newBlock]);
+    const targetIdx = activeBlockId ? blocks.findIndex((b) => b.id === activeBlockId) : -1;
+    const insertIndex = targetIdx !== -1 ? targetIdx + 1 : blocks.length;
+    const newBlock = createTempBlock(blockType, insertIndex + 1);
+
+    const updated = [...blocks];
+    updated.splice(insertIndex, 0, newBlock);
+    onUpdateBlocks(updated);
+    setActiveBlockId(newBlock.id);
+    setFocusedBlockId(newBlock.id);
   };
+
+  // When Enter is pressed in a Heading or Subheading, automatically insert and focus text block below
+  const handleEnterNewBlock = (index) => {
+    const newBlock = createTempBlock(BLOCK_TYPES.TEXT, index + 2);
+    const updated = [...blocks];
+    updated.splice(index + 1, 0, newBlock);
+    onUpdateBlocks(updated);
+    setActiveBlockId(newBlock.id);
+    setFocusedBlockId(newBlock.id);
+  };
+
+  // When Backspace is pressed in an empty block, remove it and focus preceding block
+  const handleDeleteEmptyBlock = (blockId, index) => {
+    if (blocks.length <= 1) return;
+    const prevBlock = index > 0 ? blocks[index - 1] : null;
+    const updated = blocks.filter((b) => b.id !== blockId);
+    onUpdateBlocks(updated);
+    if (prevBlock) {
+      setActiveBlockId(prevBlock.id);
+      setFocusedBlockId(prevBlock.id);
+    }
+  };
+
+  const activeBlock = blocks.find((b) => b.id === activeBlockId);
 
   return (
     <main className="flex-1 flex flex-col h-full overflow-hidden bg-page text-foreground">
@@ -244,9 +320,9 @@ export function NoteCanvas({
       </div>
 
       {/* Main Document Body */}
-      <div className="flex-1 overflow-y-auto px-4 sm:px-12 lg:px-20 py-8 max-w-4xl mx-auto w-full space-y-6">
+      <div className="flex-1 overflow-y-auto px-4 sm:px-12 lg:px-20 py-6 max-w-4xl mx-auto w-full">
         {/* Note Title Input */}
-        <div>
+        <div className="mb-1">
           <input
             ref={titleInputRef}
             type="text"
@@ -259,24 +335,24 @@ export function NoteCanvas({
         </div>
 
         {/* Optional Subtitle / Description */}
-        <div>
+        <div className="mb-3">
           <input
             type="text"
             value={note.description || ''}
             onChange={(e) => onUpdateNoteMeta({ description: e.target.value })}
             placeholder="Add an optional brief description, tags, or topic context..."
             aria-label="Note Description"
-            className="w-full bg-transparent text-sm sm:text-base text-muted placeholder:text-muted/30 focus:outline-none"
+            className="w-full bg-transparent text-xs sm:text-sm text-muted placeholder:text-muted/30 focus:outline-none"
           />
         </div>
 
-        <div className="h-[1px] w-full bg-border/60" />
+        <div className="h-[1px] w-full bg-border/40 mb-2" />
 
-        {/* Blocks Container */}
-        <div className="space-y-3 min-h-[200px]">
+        {/* Blocks Container - Compact Document Layout without card containers */}
+        <div className="flex flex-col space-y-0 min-h-[200px]">
           {blocks.length === 0 ? (
-            <div className="py-10 px-4 text-center space-y-2 select-none">
-              <p className="text-xs text-muted/80">
+            <div className="py-8 px-4 text-center space-y-2 select-none">
+              <p className="text-xs text-muted/70">
                 This document is blank. Start by clicking any block below.
               </p>
             </div>
@@ -287,6 +363,11 @@ export function NoteCanvas({
                 block={block}
                 index={idx}
                 totalBlocks={blocks.length}
+                blockNumber={blockNumbers.get(block.id)}
+                isFocused={block.id === focusedBlockId}
+                onBlockFocus={(id) => setActiveBlockId(id)}
+                onEnterNewBlock={handleEnterNewBlock}
+                onDeleteEmptyBlock={handleDeleteEmptyBlock}
                 onUpdateContent={handleUpdateContent}
                 onDeleteBlock={handleDeleteBlock}
                 onDuplicateBlock={handleDuplicateBlock}
@@ -298,8 +379,12 @@ export function NoteCanvas({
         </div>
 
         {/* Docked Compact Bottom Insertion Toolbar */}
-        <div className="sticky bottom-4 pt-4 pb-2">
-          <BlockInsertionToolbar onInsertBlock={handleAppendBlock} isDocked />
+        <div className="sticky bottom-4 pt-3 pb-2">
+          <BlockInsertionToolbar
+            onInsertBlock={handleAppendBlock}
+            activeBlockType={activeBlock?.block_type}
+            isDocked
+          />
         </div>
       </div>
     </main>

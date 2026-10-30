@@ -68,3 +68,4 @@ describe('User-isolated Navigation Storage', () => {
     assert.strictEqual(res.expandedTopics['dp'], true);
   });
 });
+
