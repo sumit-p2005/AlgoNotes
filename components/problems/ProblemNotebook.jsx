@@ -47,7 +47,13 @@ export function ProblemNotebook({
 
   // Problem State: Empty when isNew is true, otherwise uses initialProblem or sample
   const [formData, setFormData] = useState(() => {
-    if (initialProblem) return initialProblem;
+    if (initialProblem) {
+      return {
+        ...initialProblem,
+        code: initialProblem.code ?? '',
+        language: initialProblem.language || 'cpp',
+      };
+    }
     if (isNew) {
       return {
         title: '',
@@ -60,8 +66,8 @@ export function ProblemNotebook({
         key_points: '',
         brute_force_approach: '',
         optimised_approach: '',
-        code: '// Write your optimal solution here\n\nfunction solution() {\n    \n}\n',
-        language: 'javascript',
+        code: '',
+        language: 'cpp',
         time_complexity: 'O(N)',
         space_complexity: 'O(1)',
         common_mistakes: '',
@@ -421,11 +427,11 @@ export function ProblemNotebook({
   ];
 
   return (
-    <div className="flex flex-col 2xl:flex-row h-full min-h-0 bg-page text-foreground overflow-hidden">
+    <div className="flex flex-col h-full min-h-0 bg-page text-foreground overflow-y-auto">
       {/* ======================================================== */}
       {/* CENTRAL PROBLEM NOTEBOOK WORKSPACE                      */}
       {/* ======================================================== */}
-      <div className="flex-1 flex flex-col min-w-0 border-r border-border overflow-y-auto">
+      <div className="flex-1 flex flex-col min-w-0">
         {/* Breadcrumbs Row */}
         <div className="px-6 pt-5 pb-2 text-xs text-muted flex items-center justify-between">
           <div className="flex items-center gap-2 text-muted truncate">
@@ -588,136 +594,423 @@ export function ProblemNotebook({
           )}
         </div>
 
-        {/* Tabs Bar */}
-        <div className="px-6 mt-3 border-b border-border flex items-center gap-6 text-xs font-medium">
-          {['Notes', 'Code', 'Approach', 'Complexity', 'Mistakes', 'Revision'].map((tab) => {
-            const isSelected = activeTab === tab.toLowerCase();
-            return (
-              <button
-                key={tab}
-                type="button"
-                onClick={() => setActiveTab(tab.toLowerCase())}
-                className={`pb-3 font-semibold transition-colors relative cursor-pointer ${
-                  isSelected
-                    ? 'text-amber-400'
-                    : 'text-muted hover:text-foreground'
-                }`}
-              >
-                <span>{tab}</span>
-                {isSelected && (
-                  <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-amber-400 rounded-full" />
-                )}
-              </button>
-            );
-          })}
-        </div>
+        {/* Two-Column Working Layout (Left Notes ~60-65%, Right Persistent Solution Code ~35-40%) */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 p-6">
+          
+          {/* Left Column: Problem Notes (7 cols) */}
+          <div className="lg:col-span-7 space-y-5 min-w-0">
+            {/* Tabs Bar */}
+            <div className="border-b border-border flex items-center gap-2 pb-2 text-xs font-medium overflow-x-auto">
+              {[
+                { id: 'notes', label: 'Notes & Intuition' },
+                { id: 'approach', label: 'Approaches & Patterns' },
+                { id: 'complexity', label: 'Complexity & Edge Cases' },
+                { id: 'revision', label: 'Revision & Info' },
+              ].map((tab) => {
+                const isSelected = activeTab === tab.id;
+                return (
+                  <button
+                    key={tab.id}
+                    type="button"
+                    onClick={() => setActiveTab(tab.id)}
+                    className={`px-3 py-1.5 rounded-lg font-semibold whitespace-nowrap transition-colors cursor-pointer ${
+                      isSelected
+                        ? 'bg-amber-400/10 text-amber-400 border border-amber-400/20'
+                        : 'text-muted hover:text-foreground hover:bg-panel'
+                    }`}
+                  >
+                    <span>{tab.label}</span>
+                  </button>
+                );
+              })}
+            </div>
 
-        {/* Notebook Main Body */}
-        <div className="p-6 space-y-5">
-          {/* TAB: NOTES & SUMMARY */}
-          {activeTab === 'notes' && (
-            <>
-              {/* CARD 1: Problem Statement */}
-              <div className="p-4 rounded-2xl border border-border bg-panel space-y-2">
-                <div className="flex items-center gap-2 text-xs font-bold text-foreground">
-                  <FileText className="w-4 h-4 text-amber-400" />
-                  <span>Problem Statement</span>
+            {/* TAB: NOTES & INTUITION */}
+            {activeTab === 'notes' && (
+              <div className="space-y-4">
+                {/* CARD 1: Problem Statement */}
+                <div className="p-4 rounded-2xl border border-border bg-panel space-y-2">
+                  <div className="flex items-center gap-2 text-xs font-bold text-foreground">
+                    <FileText className="w-4 h-4 text-amber-400" />
+                    <span>Problem Statement</span>
+                  </div>
+                  <textarea
+                    rows={3}
+                    value={formData.summary}
+                    onChange={(e) => updateField('summary', e.target.value)}
+                    placeholder="Summarize the core problem requirements in your own words..."
+                    className="w-full bg-transparent text-xs sm:text-sm text-foreground/90 leading-relaxed font-sans focus:outline-none resize-y placeholder:text-muted"
+                  />
                 </div>
-                <textarea
-                  rows={3}
-                  value={formData.summary}
-                  onChange={(e) => updateField('summary', e.target.value)}
-                  placeholder="Summarize the core problem requirements in your own words..."
-                  className="w-full bg-transparent text-xs sm:text-sm text-foreground/90 leading-relaxed font-sans focus:outline-none resize-y placeholder:text-muted"
-                />
+
+                {/* CARD 2: Pattern Used */}
+                <div className="p-4 rounded-2xl border border-border bg-panel space-y-2.5">
+                  <div className="flex items-center gap-2 text-xs font-bold text-foreground">
+                    <Target className="w-4 h-4 text-amber-400" />
+                    <span>Pattern Used</span>
+                  </div>
+                  <div className="flex items-center gap-3 flex-wrap">
+                    <span className="px-3 py-1 rounded-full text-xs font-bold bg-amber-400 text-black">
+                      Two Pointers
+                    </span>
+                    <input
+                      type="text"
+                      value={formData.recognition_clues}
+                      onChange={(e) => updateField('recognition_clues', e.target.value)}
+                      placeholder="Used when we need to find a pair/triplet in a sorted array..."
+                      className="flex-1 bg-transparent text-xs text-muted focus:outline-none placeholder:text-muted"
+                    />
+                  </div>
+                </div>
+
+                {/* CARD 3: Key Points to Remember */}
+                <div className="p-4 rounded-2xl border border-border bg-panel space-y-3">
+                  <div className="flex items-center gap-2 text-xs font-bold text-foreground">
+                    <Lightbulb className="w-4 h-4 text-amber-400" />
+                    <span>Key Points to Remember</span>
+                  </div>
+
+                  <textarea
+                    rows={4}
+                    value={formData.key_points}
+                    onChange={(e) => updateField('key_points', e.target.value)}
+                    placeholder="• Sort the array first.&#10;• Fix one element and use two pointers for the rest.&#10;• Skip duplicates to avoid repeated triplets.&#10;• Time Complexity: O(n²)"
+                    className="w-full bg-transparent text-xs text-foreground/90 font-sans leading-relaxed focus:outline-none resize-y placeholder:text-muted"
+                  />
+                </div>
+
+                {/* CARD 4: Personal Notes with toolbar & Save button */}
+                <div className="p-4 rounded-2xl border border-border bg-panel space-y-2.5">
+                  <div className="flex items-center gap-2 text-xs font-bold text-foreground">
+                    <FileText className="w-4 h-4 text-amber-400" />
+                    <span>Personal Notes & Insights</span>
+                  </div>
+
+                  <textarea
+                    rows={4}
+                    value={formData.personal_notes || ''}
+                    onChange={(e) => updateField('personal_notes', e.target.value)}
+                    placeholder="Add your personal notes, insights, or key takeaways..."
+                    className="w-full bg-elevated/50 border border-border rounded-xl p-2.5 text-xs text-foreground placeholder:text-muted focus:outline-none focus:ring-1 focus:ring-accent"
+                  />
+
+                  <div className="flex items-center justify-between pt-1">
+                    <div className="flex items-center gap-1 text-muted">
+                      <button
+                        type="button"
+                        className="p-1 rounded hover:bg-elevated hover:text-foreground"
+                        title="Bold"
+                        aria-label="Format Bold"
+                      >
+                        <Bold className="w-3.5 h-3.5" />
+                      </button>
+                      <button
+                        type="button"
+                        className="p-1 rounded hover:bg-elevated hover:text-foreground"
+                        title="Italic"
+                        aria-label="Format Italic"
+                      >
+                        <Italic className="w-3.5 h-3.5" />
+                      </button>
+                      <button
+                        type="button"
+                        className="p-1 rounded hover:bg-elevated hover:text-foreground"
+                        title="Bullet list"
+                        aria-label="Format Bullet list"
+                      >
+                        <List className="w-3.5 h-3.5" />
+                      </button>
+                      <button
+                        type="button"
+                        className="p-1 rounded hover:bg-elevated hover:text-foreground"
+                        title="Numbered list"
+                        aria-label="Format Numbered list"
+                      >
+                        <ListOrdered className="w-3.5 h-3.5" />
+                      </button>
+                      <button
+                        type="button"
+                        className="p-1 rounded hover:bg-elevated hover:text-foreground"
+                        title="Code inline"
+                        aria-label="Format Code inline"
+                      >
+                        <Code className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => persistProblem(formData)}
+                      className="px-3 py-1 rounded-lg text-xs font-bold bg-accent text-accent-text hover:bg-accent-hover transition-colors cursor-pointer"
+                    >
+                      Save
+                    </button>
+                  </div>
+                </div>
               </div>
+            )}
 
-              {/* CARD 2: Pattern Used */}
-              <div className="p-4 rounded-2xl border border-border bg-panel space-y-2.5">
-                <div className="flex items-center gap-2 text-xs font-bold text-foreground">
-                  <Target className="w-4 h-4 text-amber-400" />
-                  <span>Pattern Used</span>
-                </div>
-                <div className="flex items-center gap-3 flex-wrap">
-                  <span className="px-3 py-1 rounded-full text-xs font-bold bg-amber-400 text-black">
-                    Two Pointers
+            {/* TAB: APPROACHES & PATTERNS */}
+            {activeTab === 'approach' && (
+              <div className="space-y-4">
+                <div className="p-4 rounded-2xl border border-border bg-panel space-y-2">
+                  <span className="text-xs font-bold text-amber-400 block uppercase tracking-wider">
+                    Optimised Approach & Algorithmic Intuition
                   </span>
-                  <input
-                    type="text"
-                    value={formData.recognition_clues}
-                    onChange={(e) => updateField('recognition_clues', e.target.value)}
-                    placeholder="Used when we need to find a pair/triplet in a sorted array..."
-                    className="flex-1 bg-transparent text-xs text-muted focus:outline-none placeholder:text-muted"
+                  <textarea
+                    rows={5}
+                    value={formData.optimised_approach}
+                    onChange={(e) => updateField('optimised_approach', e.target.value)}
+                    placeholder="Explain why this approach works, invariant preservation, and step-by-step logic..."
+                    className="w-full bg-transparent text-xs text-foreground focus:outline-none resize-y"
+                  />
+                </div>
+
+                <div className="p-4 rounded-2xl border border-border bg-panel space-y-2">
+                  <span className="text-xs font-bold text-muted block uppercase tracking-wider">
+                    Brute Force Approach
+                  </span>
+                  <textarea
+                    rows={3}
+                    value={formData.brute_force_approach}
+                    onChange={(e) => updateField('brute_force_approach', e.target.value)}
+                    placeholder="Describe the naive solution and why it is too slow..."
+                    className="w-full bg-transparent text-xs text-foreground focus:outline-none resize-y"
                   />
                 </div>
               </div>
+            )}
 
-              {/* CARD 3: Key Points to Remember */}
-              <div className="p-4 rounded-2xl border border-border bg-panel space-y-3">
-                <div className="flex items-center gap-2 text-xs font-bold text-foreground">
-                  <Lightbulb className="w-4 h-4 text-amber-400" />
-                  <span>Key Points to Remember</span>
+            {/* TAB: COMPLEXITY & EDGE CASES */}
+            {activeTab === 'complexity' && (
+              <div className="space-y-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="p-4 rounded-2xl border border-border bg-panel space-y-2">
+                    <span className="text-xs font-bold text-muted uppercase tracking-wider block">
+                      Time Complexity
+                    </span>
+                    <input
+                      type="text"
+                      value={formData.time_complexity}
+                      onChange={(e) => updateField('time_complexity', e.target.value)}
+                      className="w-full bg-elevated border border-border rounded-lg px-3 py-2 text-xs text-foreground focus:outline-none"
+                      placeholder="e.g. O(n²)"
+                    />
+                  </div>
+
+                  <div className="p-4 rounded-2xl border border-border bg-panel space-y-2">
+                    <span className="text-xs font-bold text-muted uppercase tracking-wider block">
+                      Space Complexity
+                    </span>
+                    <input
+                      type="text"
+                      value={formData.space_complexity}
+                      onChange={(e) => updateField('space_complexity', e.target.value)}
+                      className="w-full bg-elevated border border-border rounded-lg px-3 py-2 text-xs text-foreground focus:outline-none"
+                      placeholder="e.g. O(1) auxiliary"
+                    />
+                  </div>
                 </div>
 
-                <textarea
-                  rows={4}
-                  value={formData.key_points}
-                  onChange={(e) => updateField('key_points', e.target.value)}
-                  placeholder="• Sort the array first.&#10;• Fix one element and use two pointers for the rest.&#10;• Skip duplicates to avoid repeated triplets.&#10;• Time Complexity: O(n²)"
-                  className="w-full bg-transparent text-xs text-foreground/90 font-sans leading-relaxed focus:outline-none resize-y placeholder:text-muted"
-                />
-              </div>
-            </>
-          )}
+                <div className="p-4 rounded-2xl border border-border bg-panel space-y-2">
+                  <span className="text-xs font-bold text-muted uppercase tracking-wider block">
+                    Common Mistakes & Pitfalls
+                  </span>
+                  <textarea
+                    rows={3}
+                    value={formData.common_mistakes}
+                    onChange={(e) => updateField('common_mistakes', e.target.value)}
+                    className="w-full bg-transparent text-xs text-foreground focus:outline-none resize-y"
+                  />
+                </div>
 
-          {/* TAB: CODE */}
-          {(activeTab === 'code' || activeTab === 'notes') && (
-            <div className="rounded-2xl border border-border bg-panel overflow-hidden space-y-0">
+                <div className="p-4 rounded-2xl border border-border bg-panel space-y-2">
+                  <span className="text-xs font-bold text-muted uppercase tracking-wider block">
+                    Critical Edge Cases
+                  </span>
+                  <textarea
+                    rows={3}
+                    value={formData.edge_cases}
+                    onChange={(e) => updateField('edge_cases', e.target.value)}
+                    className="w-full bg-transparent text-xs text-foreground focus:outline-none resize-y"
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* TAB: REVISION & INFO */}
+            {activeTab === 'revision' && (
+              <div className="space-y-4">
+                {/* Revision Widget */}
+                <div className="p-4 rounded-2xl border border-border bg-panel space-y-3.5">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2 text-xs font-bold text-foreground">
+                      <Calendar className="w-4 h-4 text-amber-400" />
+                      <span>Revision Schedule</span>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={toggleLearned}
+                      className="px-3 py-1 rounded-lg text-xs font-bold bg-accent text-accent-text hover:bg-accent-hover transition-colors cursor-pointer"
+                    >
+                      {formData.is_learned ? 'Mark as Done' : 'Schedule Review'}
+                    </button>
+                  </div>
+
+                  <div className="grid grid-cols-3 gap-2 text-center">
+                    <div className="p-2.5 rounded-xl border border-border bg-elevated/50">
+                      <span className="text-[10px] text-muted block mb-0.5">Next Review</span>
+                      <span className="text-xs font-bold text-foreground">
+                        {scheduleData?.next_review_at
+                          ? new Date(scheduleData.next_review_at).toLocaleDateString('en-GB', {
+                              day: 'numeric',
+                              month: 'short',
+                              year: 'numeric',
+                            })
+                          : '21 Oct 2026'}
+                      </span>
+                    </div>
+                    <div className="p-2.5 rounded-xl border border-border bg-elevated/50">
+                      <span className="text-[10px] text-muted block mb-0.5">Days Left</span>
+                      <span className="text-xs font-bold text-foreground">
+                        {scheduleData?.days_left || 3}
+                      </span>
+                    </div>
+                    <div className="p-2.5 rounded-xl border border-border bg-elevated/50">
+                      <span className="text-[10px] text-muted block mb-0.5">Review Stage</span>
+                      <span className="text-xs font-bold text-foreground">
+                        {scheduleData?.stage || 1}/4
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Additional Notes */}
+                <div className="p-4 rounded-2xl border border-border bg-panel space-y-2.5">
+                  <div className="flex items-center gap-2 text-xs font-bold text-foreground">
+                    <Edit3 className="w-4 h-4 text-amber-400" />
+                    <span>Additional Notes</span>
+                  </div>
+
+                  <textarea
+                    rows={4}
+                    value={formData.additional_notes || ''}
+                    onChange={(e) => updateField('additional_notes', e.target.value)}
+                    placeholder="• Can be extended to k-Sum problem.&#10;• Important to handle duplicates carefully.&#10;• Practice variations like 4Sum."
+                    className="w-full bg-transparent text-xs text-foreground/80 leading-relaxed font-sans focus:outline-none resize-y placeholder:text-muted"
+                  />
+                </div>
+
+                {/* Related Problems */}
+                <div className="p-4 rounded-2xl border border-border bg-panel space-y-2.5">
+                  <div className="flex items-center justify-between text-xs">
+                    <div className="flex items-center gap-2 font-bold text-foreground">
+                      <Link2 className="w-4 h-4 text-amber-400" />
+                      <span>Related Problems</span>
+                    </div>
+                    <Link
+                      href="/problems"
+                      className="text-[11px] text-amber-400 hover:underline flex items-center gap-1 font-medium"
+                    >
+                      <span>View All</span>
+                      <ArrowRight className="w-3 h-3" />
+                    </Link>
+                  </div>
+
+                  <div className="space-y-1 text-xs">
+                    {relatedProblems.map((prob) => {
+                      const badgeClass =
+                        prob.difficulty === 'Easy'
+                          ? 'bg-emerald-500/15 border-emerald-500/30 text-emerald-400'
+                          : prob.difficulty === 'Hard'
+                          ? 'bg-rose-500/15 border-rose-500/30 text-rose-400'
+                          : 'bg-amber-400/15 border-amber-400/30 text-amber-400';
+
+                      return (
+                        <Link
+                          key={prob.id}
+                          href={`/problems/${prob.id}`}
+                          className="flex items-center justify-between p-2 rounded-xl hover:bg-elevated/70 transition-colors group"
+                        >
+                          <div className="flex items-center gap-2 truncate pr-2">
+                            <FileText className="w-3.5 h-3.5 text-muted shrink-0" />
+                            <span className="text-foreground/90 group-hover:text-amber-400 truncate text-[11px] font-medium">
+                              {prob.title}
+                            </span>
+                          </div>
+
+                          <div className="flex items-center gap-1.5 shrink-0">
+                            <span
+                              className={`px-2 py-0.5 rounded text-[10px] font-bold border ${badgeClass}`}
+                            >
+                              {prob.difficulty}
+                            </span>
+                            <ChevronRight className="w-3.5 h-3.5 text-muted opacity-40 group-hover:opacity-100" />
+                          </div>
+                        </Link>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Problem Stats */}
+                <div className="p-4 rounded-2xl border border-border bg-panel space-y-2.5">
+                  <div className="flex items-center gap-2 text-xs font-bold text-foreground">
+                    <TrendingUp className="w-4 h-4 text-amber-400" />
+                    <span>Problem Stats</span>
+                  </div>
+
+                  <div className="grid grid-cols-3 gap-2 text-center">
+                    <div className="p-2 rounded-xl border border-border bg-elevated/50">
+                      <span className="text-[10px] text-muted block mb-0.5">Solved</span>
+                      <span className="text-xs font-bold text-foreground">24.8K</span>
+                      <span className="text-[9px] text-muted block">Users</span>
+                    </div>
+                    <div className="p-2 rounded-xl border border-border bg-elevated/50">
+                      <span className="text-[10px] text-muted block mb-0.5">Acceptance Rate</span>
+                      <span className="text-xs font-bold text-foreground">42.3%</span>
+                      <span className="text-[9px] text-muted block">LeetCode</span>
+                    </div>
+                    <div className="p-2 rounded-xl border border-border bg-elevated/50">
+                      <span className="text-[10px] text-muted block mb-0.5">Difficulty</span>
+                      <span className="text-xs font-bold text-amber-400">{formData.difficulty || 'Medium'}</span>
+                      <span className="text-[9px] text-muted block">LeetCode</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Create Button when in isNew mode */}
+            {isNew && (
+              <div className="pt-2">
+                <button
+                  type="button"
+                  onClick={handleCreate}
+                  disabled={isCreating}
+                  className="w-full py-3 rounded-xl bg-accent text-accent-text hover:bg-accent-hover font-bold text-xs tracking-wide shadow-xs transition-colors cursor-pointer flex items-center justify-center gap-2"
+                >
+                  <Save className="w-4 h-4" />
+                  <span>{isCreating ? 'Saving Note to Database...' : 'Save Problem Note to Workspace'}</span>
+                </button>
+              </div>
+            )}
+          </div>
+
+          {/* Right Column: Persistent Solution Code Panel (5 cols) */}
+          <div className="lg:col-span-5 space-y-4 min-w-0">
+            <div className="rounded-2xl border border-border bg-panel overflow-hidden sticky top-4 shadow-sm flex flex-col">
               <div className="flex items-center justify-between px-4 py-2.5 border-b border-border bg-elevated/40">
                 <div className="flex items-center gap-2 text-xs font-bold text-foreground">
                   <Code2 className="w-4 h-4 text-amber-400" />
-                  <span>Code</span>
+                  <span>Persistent Solution Code</span>
                 </div>
 
                 <div className="flex items-center gap-2">
-                  <select
-                    value={formData.language}
-                    onChange={(e) => updateField('language', e.target.value)}
-                    className="bg-elevated border border-border rounded-lg px-2.5 py-1 text-xs font-medium text-foreground focus:outline-none focus:ring-1 focus:ring-accent cursor-pointer"
-                  >
-                    <option value="java">Java</option>
-                    <option value="javascript">JavaScript</option>
-                    <option value="python">Python</option>
-                    <option value="cpp">C++</option>
-                    <option value="c">C</option>
-                  </select>
-
-                  <button
-                    type="button"
-                    onClick={handleCopyCode}
-                    className="flex items-center gap-1 px-2.5 py-1 rounded-lg border border-border bg-elevated text-xs font-medium text-muted hover:text-foreground transition-colors cursor-pointer"
-                  >
-                    {copiedCode ? (
-                      <>
-                        <Check className="w-3.5 h-3.5 text-emerald-500" />
-                        <span className="text-emerald-500">Copied</span>
-                      </>
-                    ) : (
-                      <>
-                        <Copy className="w-3.5 h-3.5" />
-                        <span>Copy</span>
-                      </>
-                    )}
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => setIsFullscreen(!isFullscreen)}
-                    className="p-1 rounded-lg border border-border bg-elevated text-muted hover:text-foreground"
-                    title="Toggle fullscreen code"
-                  >
-                    <Maximize2 className="w-3.5 h-3.5" />
-                  </button>
+                  <span className="text-[10px] text-muted font-mono uppercase tracking-wider">
+                    {formData.language || 'cpp'}
+                  </span>
                 </div>
               </div>
 
@@ -725,392 +1018,16 @@ export function ProblemNotebook({
                 <CodeEditor
                   value={formData.code}
                   onChange={(val) => updateField('code', val)}
-                  language={formData.language}
-                  minHeight="380px"
+                  language={formData.language || 'cpp'}
+                  onLanguageChange={(lang) => updateField('language', lang)}
+                  placeholder="Write your Code"
+                  minHeight="540px"
+                  className="border-0 rounded-none"
                 />
               </div>
             </div>
-          )}
-
-          {/* TAB: APPROACH */}
-          {activeTab === 'approach' && (
-            <div className="space-y-4">
-              <div className="p-4 rounded-2xl border border-border bg-panel space-y-2">
-                <span className="text-xs font-bold text-amber-400 block uppercase tracking-wider">
-                  Optimised Approach & Algorithmic Intuition
-                </span>
-                <textarea
-                  rows={5}
-                  value={formData.optimised_approach}
-                  onChange={(e) => updateField('optimised_approach', e.target.value)}
-                  placeholder="Explain why this approach works, invariant preservation, and step-by-step logic..."
-                  className="w-full bg-transparent text-xs text-foreground focus:outline-none resize-y"
-                />
-              </div>
-
-              <div className="p-4 rounded-2xl border border-border bg-panel space-y-2">
-                <span className="text-xs font-bold text-muted block uppercase tracking-wider">
-                  Brute Force Approach
-                </span>
-                <textarea
-                  rows={3}
-                  value={formData.brute_force_approach}
-                  onChange={(e) => updateField('brute_force_approach', e.target.value)}
-                  placeholder="Describe the naive solution and why it is too slow..."
-                  className="w-full bg-transparent text-xs text-foreground focus:outline-none resize-y"
-                />
-              </div>
-            </div>
-          )}
-
-          {/* TAB: COMPLEXITY */}
-          {activeTab === 'complexity' && (
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="p-4 rounded-2xl border border-border bg-panel space-y-2">
-                <span className="text-xs font-bold text-muted uppercase tracking-wider block">
-                  Time Complexity
-                </span>
-                <input
-                  type="text"
-                  value={formData.time_complexity}
-                  onChange={(e) => updateField('time_complexity', e.target.value)}
-                  className="w-full bg-elevated border border-border rounded-lg px-3 py-2 text-xs text-foreground focus:outline-none"
-                  placeholder="e.g. O(n²)"
-                />
-              </div>
-
-              <div className="p-4 rounded-2xl border border-border bg-panel space-y-2">
-                <span className="text-xs font-bold text-muted uppercase tracking-wider block">
-                  Space Complexity
-                </span>
-                <input
-                  type="text"
-                  value={formData.space_complexity}
-                  onChange={(e) => updateField('space_complexity', e.target.value)}
-                  className="w-full bg-elevated border border-border rounded-lg px-3 py-2 text-xs text-foreground focus:outline-none"
-                  placeholder="e.g. O(1) auxiliary"
-                />
-              </div>
-            </div>
-          )}
-
-          {/* TAB: MISTAKES & EDGE CASES */}
-          {activeTab === 'mistakes' && (
-            <div className="space-y-4">
-              <div className="p-4 rounded-2xl border border-border bg-panel space-y-2">
-                <span className="text-xs font-bold text-muted uppercase tracking-wider block">
-                  Common Mistakes & Pitfalls
-                </span>
-                <textarea
-                  rows={3}
-                  value={formData.common_mistakes}
-                  onChange={(e) => updateField('common_mistakes', e.target.value)}
-                  className="w-full bg-transparent text-xs text-foreground focus:outline-none resize-y"
-                />
-              </div>
-
-              <div className="p-4 rounded-2xl border border-border bg-panel space-y-2">
-                <span className="text-xs font-bold text-muted uppercase tracking-wider block">
-                  Critical Edge Cases
-                </span>
-                <textarea
-                  rows={3}
-                  value={formData.edge_cases}
-                  onChange={(e) => updateField('edge_cases', e.target.value)}
-                  className="w-full bg-transparent text-xs text-foreground focus:outline-none resize-y"
-                />
-              </div>
-            </div>
-          )}
-
-          {/* TAB: REVISION HISTORY */}
-          {activeTab === 'revision' && (
-            <div className="p-4 rounded-2xl border border-border bg-panel space-y-3">
-              <span className="text-xs font-bold text-foreground block">
-                Active Recall Spaced Schedule
-              </span>
-              <div className="grid grid-cols-3 gap-3 text-xs">
-                <div className="p-3 rounded-xl border border-border bg-elevated/40">
-                  <span className="text-muted block text-[11px]">Current Stage</span>
-                  <span className="text-sm font-bold text-amber-400">
-                    Stage {scheduleData?.stage || 1}/4
-                  </span>
-                </div>
-                <div className="p-3 rounded-xl border border-border bg-elevated/40">
-                  <span className="text-muted block text-[11px]">Next Review</span>
-                  <span className="text-sm font-bold text-foreground">
-                    {scheduleData?.next_review_at
-                      ? new Date(scheduleData.next_review_at).toLocaleDateString()
-                      : '21 Oct 2026'}
-                  </span>
-                </div>
-                <div className="p-3 rounded-xl border border-border bg-elevated/40">
-                  <span className="text-muted block text-[11px]">Days Remaining</span>
-                  <span className="text-sm font-bold text-foreground">
-                    {scheduleData?.days_left || 3} days
-                  </span>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Create Button when in isNew mode */}
-          {isNew && (
-            <div className="pt-2">
-              <button
-                type="button"
-                onClick={handleCreate}
-                disabled={isCreating}
-                className="w-full py-3 rounded-xl bg-accent text-accent-text hover:bg-accent-hover font-bold text-xs tracking-wide shadow-xs transition-colors cursor-pointer flex items-center justify-center gap-2"
-              >
-                <Save className="w-4 h-4" />
-                <span>{isCreating ? 'Saving Note to Database...' : 'Save Problem Note to Workspace'}</span>
-              </button>
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* ======================================================== */}
-      {/* RIGHT-SIDE REVISION & ADDITIONAL NOTES PANEL            */}
-      {/* ======================================================== */}
-      <div className="w-full 2xl:w-88 border-t 2xl:border-t-0 bg-page p-5 flex flex-col gap-5 overflow-y-auto shrink-0 select-none">
-        {/* CARD 1: Revision Widget */}
-        <div className="p-4 rounded-2xl border border-border bg-panel space-y-3.5">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2 text-xs font-bold text-foreground">
-              <Calendar className="w-4 h-4 text-amber-400" />
-              <span>Revision</span>
-            </div>
-
-            <button
-              type="button"
-              onClick={toggleLearned}
-              className="px-3 py-1 rounded-lg text-xs font-bold bg-accent text-accent-text hover:bg-accent-hover transition-colors cursor-pointer"
-            >
-              {formData.is_learned ? 'Mark as Done' : 'Schedule Review'}
-            </button>
           </div>
 
-          <div className="grid grid-cols-3 gap-2 text-center">
-            <div className="p-2.5 rounded-xl border border-border bg-elevated/50">
-              <span className="text-[10px] text-muted block mb-0.5">Next Review</span>
-              <span className="text-xs font-bold text-foreground">
-                {scheduleData?.next_review_at
-                  ? new Date(scheduleData.next_review_at).toLocaleDateString('en-GB', {
-                      day: 'numeric',
-                      month: 'short',
-                      year: 'numeric',
-                    })
-                  : '21 Oct 2026'}
-              </span>
-            </div>
-            <div className="p-2.5 rounded-xl border border-border bg-elevated/50">
-              <span className="text-[10px] text-muted block mb-0.5">Days Left</span>
-              <span className="text-xs font-bold text-foreground">
-                {scheduleData?.days_left || 3}
-              </span>
-            </div>
-            <div className="p-2.5 rounded-xl border border-border bg-elevated/50">
-              <span className="text-[10px] text-muted block mb-0.5">Review Stage</span>
-              <span className="text-xs font-bold text-foreground">
-                {scheduleData?.stage || 1}/4
-              </span>
-            </div>
-          </div>
-        </div>
-
-        {/* CARD 2: Additional Notes */}
-        <div className="p-4 rounded-2xl border border-border bg-panel space-y-2.5">
-          <div className="flex items-center gap-2 text-xs font-bold text-foreground">
-            <Edit3 className="w-4 h-4 text-amber-400" />
-            <span>Additional Notes</span>
-          </div>
-
-          <textarea
-            rows={4}
-            value={formData.additional_notes || ''}
-            onChange={(e) => updateField('additional_notes', e.target.value)}
-            placeholder="• Can be extended to k-Sum problem.&#10;• Important to handle duplicates carefully.&#10;• Practice variations like 4Sum."
-            className="w-full bg-transparent text-xs text-foreground/80 leading-relaxed font-sans focus:outline-none resize-y placeholder:text-muted"
-          />
-        </div>
-
-        {/* CARD 3: Related Problems */}
-        <div className="p-4 rounded-2xl border border-border bg-panel space-y-2.5">
-          <div className="flex items-center justify-between text-xs">
-            <div className="flex items-center gap-2 font-bold text-foreground">
-              <Link2 className="w-4 h-4 text-amber-400" />
-              <span>Related Problems</span>
-            </div>
-            <Link
-              href="/problems"
-              className="text-[11px] text-amber-400 hover:underline flex items-center gap-1 font-medium"
-            >
-              <span>View All</span>
-              <ArrowRight className="w-3 h-3" />
-            </Link>
-          </div>
-
-          <div className="space-y-1 text-xs">
-            {relatedProblems.map((prob) => {
-              const badgeClass =
-                prob.difficulty === 'Easy'
-                  ? 'bg-emerald-500/15 border-emerald-500/30 text-emerald-400'
-                  : prob.difficulty === 'Hard'
-                  ? 'bg-rose-500/15 border-rose-500/30 text-rose-400'
-                  : 'bg-amber-400/15 border-amber-400/30 text-amber-400';
-
-              return (
-                <Link
-                  key={prob.id}
-                  href={`/problems/${prob.id}`}
-                  className="flex items-center justify-between p-2 rounded-xl hover:bg-elevated/70 transition-colors group"
-                >
-                  <div className="flex items-center gap-2 truncate pr-2">
-                    <FileText className="w-3.5 h-3.5 text-muted shrink-0" />
-                    <span className="text-foreground/90 group-hover:text-amber-400 truncate text-[11px] font-medium">
-                      {prob.title}
-                    </span>
-                  </div>
-
-                  <div className="flex items-center gap-1.5 shrink-0">
-                    <span
-                      className={`px-2 py-0.5 rounded text-[10px] font-bold border ${badgeClass}`}
-                    >
-                      {prob.difficulty}
-                    </span>
-                    <ChevronRight className="w-3.5 h-3.5 text-muted opacity-40 group-hover:opacity-100" />
-                  </div>
-                </Link>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* CARD 4: Problem Stats */}
-        <div className="p-4 rounded-2xl border border-border bg-panel space-y-2.5">
-          <div className="flex items-center gap-2 text-xs font-bold text-foreground">
-            <TrendingUp className="w-4 h-4 text-amber-400" />
-            <span>Problem Stats</span>
-          </div>
-
-          <div className="grid grid-cols-3 gap-2 text-center">
-            <div className="p-2 rounded-xl border border-border bg-elevated/50">
-              <span className="text-[10px] text-muted block mb-0.5">Solved</span>
-              <span className="text-xs font-bold text-foreground">24.8K</span>
-              <span className="text-[9px] text-muted block">Users</span>
-            </div>
-            <div className="p-2 rounded-xl border border-border bg-elevated/50">
-              <span className="text-[10px] text-muted block mb-0.5">Acceptance Rate</span>
-              <span className="text-xs font-bold text-foreground">42.3%</span>
-              <span className="text-[9px] text-muted block">LeetCode</span>
-            </div>
-            <div className="p-2 rounded-xl border border-border bg-elevated/50">
-              <span className="text-[10px] text-muted block mb-0.5">Difficulty</span>
-              <span className="text-xs font-bold text-amber-400">{formData.difficulty || 'Medium'}</span>
-              <span className="text-[9px] text-muted block">LeetCode</span>
-            </div>
-          </div>
-        </div>
-
-        {/* CARD 5: Personal Notes with toolbar & Save button */}
-        <div className="p-4 rounded-2xl border border-border bg-panel space-y-2.5">
-          <div className="flex items-center gap-2 text-xs font-bold text-foreground">
-            <FileText className="w-4 h-4 text-amber-400" />
-            <span>Personal Notes</span>
-          </div>
-
-          <textarea
-            rows={3}
-            value={formData.personal_notes || ''}
-            onChange={(e) => updateField('personal_notes', e.target.value)}
-            placeholder="Add your personal notes, insights, or key takeaways..."
-            className="w-full bg-elevated/50 border border-border rounded-xl p-2.5 text-xs text-foreground placeholder:text-muted focus:outline-none focus:ring-1 focus:ring-accent"
-          />
-
-          <div className="flex items-center justify-between pt-1">
-            <div className="flex items-center gap-1 text-muted">
-              <button
-                type="button"
-                className="p-1 rounded hover:bg-elevated hover:text-foreground"
-                title="Bold"
-                aria-label="Format Bold"
-              >
-                <Bold className="w-3.5 h-3.5" />
-              </button>
-              <button
-                type="button"
-                className="p-1 rounded hover:bg-elevated hover:text-foreground"
-                title="Italic"
-                aria-label="Format Italic"
-              >
-                <Italic className="w-3.5 h-3.5" />
-              </button>
-              <button
-                type="button"
-                className="p-1 rounded hover:bg-elevated hover:text-foreground"
-                title="Bullet list"
-                aria-label="Format Bullet list"
-              >
-                <List className="w-3.5 h-3.5" />
-              </button>
-              <button
-                type="button"
-                className="p-1 rounded hover:bg-elevated hover:text-foreground"
-                title="Numbered list"
-                aria-label="Format Numbered list"
-              >
-                <ListOrdered className="w-3.5 h-3.5" />
-              </button>
-              <button
-                type="button"
-                className="p-1 rounded hover:bg-elevated hover:text-foreground"
-                title="Code inline"
-                aria-label="Format Code inline"
-              >
-                <Code className="w-3.5 h-3.5" />
-              </button>
-            </div>
-
-            <button
-              type="button"
-              onClick={() => persistProblem(formData)}
-              className="px-3 py-1 rounded-lg text-xs font-bold bg-accent text-accent-text hover:bg-accent-hover transition-colors cursor-pointer"
-            >
-              Save
-            </button>
-          </div>
-        </div>
-
-        {/* CARD 6: Tags */}
-        <div className="p-4 rounded-2xl border border-border bg-panel space-y-2.5">
-          <span className="text-xs font-bold text-foreground block">Tags</span>
-          <div className="flex flex-wrap gap-1.5 text-xs">
-            {(formData.tags || []).map((tag) => (
-              <span
-                key={tag}
-                className="px-2.5 py-0.5 rounded-full bg-elevated border border-border text-foreground/80 flex items-center gap-1 text-[11px]"
-              >
-                {tag}{' '}
-                <button
-                  type="button"
-                  onClick={() => handleRemoveTag(tag)}
-                  className="hover:text-red-400 ml-0.5"
-                >
-                  ×
-                </button>
-              </span>
-            ))}
-            <button
-              type="button"
-              onClick={() => setShowTagInput(true)}
-              className="px-2 py-0.5 rounded-full border border-dashed border-border text-[11px] text-muted hover:text-foreground flex items-center gap-1 cursor-pointer"
-            >
-              <Plus className="w-3 h-3" />
-              <span>Add Tag</span>
-            </button>
-          </div>
         </div>
       </div>
     </div>

@@ -22,6 +22,8 @@ import {
   Check,
 } from 'lucide-react';
 import { cn } from '@/lib/utils/cn';
+import { createClient } from '@/lib/supabase/client';
+import { getCurriculumNav, saveCurriculumNav } from '@/lib/utils/userStorage';
 import { CurrentProgressWizard } from '@/components/onboarding/CurrentProgressWizard';
 
 function StriverA2ZSheetContent() {
@@ -31,12 +33,33 @@ function StriverA2ZSheetContent() {
 
   const [curriculumData, setCurriculumData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [userId, setUserId] = useState(null);
+  const [lastVisitedProblemId, setLastVisitedProblemId] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [difficultyFilter, setDifficultyFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
   const [expandedTopics, setExpandedTopics] = useState(new Set());
   const [isWizardOpen, setIsWizardOpen] = useState(false);
   const [updatingProblemId, setUpdatingProblemId] = useState(null);
+
+  useEffect(() => {
+    async function loadAuth() {
+      try {
+        const supabase = createClient();
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          setUserId(user.id);
+          const savedNav = getCurriculumNav(user.id);
+          if (savedNav?.lastProblemId) {
+            setLastVisitedProblemId(savedNav.lastProblemId);
+          }
+        }
+      } catch (err) {
+        // Fallback gracefully
+      }
+    }
+    loadAuth();
+  }, []);
 
   const fetchCurriculum = useCallback(async () => {
     try {
@@ -45,9 +68,29 @@ function StriverA2ZSheetContent() {
         const data = await res.json();
         setCurriculumData(data);
 
-        // Auto-expand topic from query or first topic
-        if (initialTopicId) {
-          setExpandedTopics(new Set([initialTopicId]));
+        // Auto-expand topic: query param > saved user state > first topic
+        let targetTopicId = initialTopicId;
+        if (!targetTopicId && typeof window !== 'undefined') {
+          try {
+            const supabase = createClient();
+            const { data: { user } } = await supabase.auth.getUser();
+            if (user?.id) {
+              setUserId(user.id);
+              const savedNav = getCurriculumNav(user.id);
+              if (savedNav?.lastStepId && data.topics?.some((t) => t.id === savedNav.lastStepId)) {
+                targetTopicId = savedNav.lastStepId;
+              }
+              if (savedNav?.lastProblemId) {
+                setLastVisitedProblemId(savedNav.lastProblemId);
+              }
+            }
+          } catch (e) {
+            // ignore
+          }
+        }
+
+        if (targetTopicId) {
+          setExpandedTopics(new Set([targetTopicId]));
         } else if (data.topics && data.topics.length > 0) {
           setExpandedTopics(new Set([data.topics[0].id]));
         }
@@ -66,8 +109,13 @@ function StriverA2ZSheetContent() {
   const toggleTopicExpand = (topicId) => {
     setExpandedTopics((prev) => {
       const next = new Set(prev);
+      const isExpanding = !next.has(topicId);
       if (next.has(topicId)) next.delete(topicId);
       else next.add(topicId);
+
+      if (isExpanding && userId) {
+        saveCurriculumNav(userId, { lastStepId: topicId });
+      }
       return next;
     });
   };
@@ -405,6 +453,14 @@ function StriverA2ZSheetContent() {
                                     <div className="min-w-0 flex-1">
                                       <Link
                                         href={`/sheets/striver-a2z/${prob.id}`}
+                                        onClick={() => {
+                                          if (userId) {
+                                            saveCurriculumNav(userId, {
+                                              lastStepId: topic.id,
+                                              lastProblemId: prob.id,
+                                            });
+                                          }
+                                        }}
                                         className="text-xs sm:text-sm font-medium text-foreground hover:text-amber-400 transition-colors line-clamp-1 cursor-pointer"
                                       >
                                         {prob.title}
@@ -422,6 +478,11 @@ function StriverA2ZSheetContent() {
                                         >
                                           {prob.difficulty}
                                         </span>
+                                        {lastVisitedProblemId === prob.id && (
+                                          <span className="text-[10px] text-accent font-semibold px-1.5 py-0.2 rounded bg-accent/10 border border-accent/20">
+                                            Last opened
+                                          </span>
+                                        )}
                                         {prob.hasNotes && (
                                           <span className="text-[10px] text-muted flex items-center gap-1">
                                             <FileEdit className="w-3 h-3 text-amber-400" />

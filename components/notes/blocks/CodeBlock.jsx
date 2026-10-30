@@ -5,7 +5,7 @@ import { CodeEditor } from '@/components/editor/CodeEditor';
 
 export function CodeBlock({ content = {}, onChange }) {
   const code = content.code || '';
-  const language = content.language || 'javascript';
+  const language = content.language || 'cpp';
 
   const handleCodeChange = (newCode) => {
     onChange({

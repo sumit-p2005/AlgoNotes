@@ -24,6 +24,8 @@ import {
   CheckCircle2,
 } from 'lucide-react';
 import { cn } from '@/lib/utils/cn';
+import { createClient } from '@/lib/supabase/client';
+import { saveCurriculumNav } from '@/lib/utils/userStorage';
 import { CodeEditor } from '@/components/editor/CodeEditor';
 import { calculateNextReview, initializeSchedule } from '@/lib/revision/scheduler';
 
@@ -42,10 +44,10 @@ export function CurriculumQuestionNotebook({
   // Problem Status
   const [status, setStatus] = useState(initialProgress?.status || 'Not started');
 
-  // Notebook Fields (Empty initially as required)
+  // Notebook Fields (Empty initially as required, C++ default)
   const [notesData, setNotesData] = useState({
     code: initialNotes?.code || '',
-    language: initialNotes?.language || 'javascript',
+    language: initialNotes?.language || 'cpp',
     pattern_used: initialNotes?.pattern_used || '',
     pattern_cues: initialNotes?.pattern_cues || '',
     key_points: initialNotes?.key_points || '',
@@ -60,6 +62,25 @@ export function CurriculumQuestionNotebook({
     confidence_rating: initialNotes?.confidence_rating || 3,
     tags: initialNotes?.tags || [],
   });
+
+  // Track user navigation to this question
+  useEffect(() => {
+    async function trackCurriculumVisit() {
+      try {
+        const supabase = createClient();
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user?.id) {
+          saveCurriculumNav(user.id, {
+            lastStepId: topic?.id,
+            lastProblemId: problem.id,
+          });
+        }
+      } catch (e) {
+        // ignore
+      }
+    }
+    trackCurriculumVisit();
+  }, [topic?.id, problem.id]);
 
   // Revision Schedule
   const [schedule, setSchedule] = useState(() => {
@@ -310,25 +331,25 @@ export function CurriculumQuestionNotebook({
           </div>
         </div>
 
-        {/* Workspace Layout: 3 Columns / 2 Columns */}
+        {/* Workspace Layout: 2 Columns (Left: Problem Notes ~60%, Right: Persistent Solution Code ~40%) */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
           
-          {/* Main Central Notebook Workspace (8 cols) */}
-          <div className="lg:col-span-8 space-y-6">
+          {/* Left Column: Problem Notes Tabs (7 cols) */}
+          <div className="lg:col-span-7 space-y-5 min-w-0">
 
             {/* Workspace Tab Bar */}
-            <div className="flex items-center gap-1 border-b border-border pb-2 text-xs">
+            <div className="flex items-center gap-1 border-b border-border pb-2 text-xs overflow-x-auto">
               {[
                 { id: 'notes', label: 'Notes & Intuition' },
-                { id: 'code', label: 'Solution Code' },
                 { id: 'approach', label: 'Approaches & Patterns' },
                 { id: 'complexity', label: 'Complexity & Edge Cases' },
+                { id: 'revision', label: 'Revision & Info' },
               ].map((tab) => (
                 <button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id)}
                   className={cn(
-                    'px-3 py-1.5 rounded-lg font-semibold transition-colors cursor-pointer',
+                    'px-3 py-1.5 rounded-lg font-semibold whitespace-nowrap transition-colors cursor-pointer',
                     activeTab === tab.id
                       ? 'bg-amber-400/10 text-amber-400 border border-amber-400/20'
                       : 'text-muted hover:text-foreground hover:bg-panel'
@@ -411,22 +432,7 @@ export function CurriculumQuestionNotebook({
               </div>
             )}
 
-            {/* TAB 2: SOLUTION CODE */}
-            {activeTab === 'code' && (
-              <div className="space-y-4">
-                <div className="rounded-xl border border-border bg-card overflow-hidden">
-                  <CodeEditor
-                    value={notesData.code}
-                    onChange={(val) => handleFieldChange('code', val)}
-                    language={notesData.language}
-                    onLanguageChange={(lang) => handleFieldChange('language', lang)}
-                    minHeight="420px"
-                  />
-                </div>
-              </div>
-            )}
-
-            {/* TAB 3: APPROACHES & PATTERNS */}
+            {/* TAB 2: APPROACHES & PATTERNS */}
             {activeTab === 'approach' && (
               <div className="space-y-4">
                 {/* Brute Force Approach */}
@@ -459,7 +465,7 @@ export function CurriculumQuestionNotebook({
               </div>
             )}
 
-            {/* TAB 4: COMPLEXITY & EDGE CASES */}
+            {/* TAB 3: COMPLEXITY & EDGE CASES */}
             {activeTab === 'complexity' && (
               <div className="space-y-4">
                 {/* Time & Space Complexity */}
@@ -552,135 +558,162 @@ export function CurriculumQuestionNotebook({
                 </div>
               </div>
             )}
+
+            {/* TAB 4: REVISION & INFO */}
+            {activeTab === 'revision' && (
+              <div className="space-y-4">
+                {/* Spaced Repetition Card */}
+                <div className="p-4 rounded-xl border border-border bg-card space-y-4 shadow-sm">
+                  <div className="flex items-center justify-between border-b border-border pb-3">
+                    <div className="flex items-center gap-2">
+                      <Calendar className="w-4 h-4 text-amber-400" />
+                      <span className="text-xs font-bold text-foreground">Revision Schedule</span>
+                    </div>
+                    <span className="text-[10px] font-bold text-amber-400 bg-amber-400/10 px-2 py-0.5 rounded-full border border-amber-400/20">
+                      Stage {schedule.review_stage || 1}/4
+                    </span>
+                  </div>
+
+                  {/* Next Review Date & Interval */}
+                  <div className="grid grid-cols-2 gap-2 text-center">
+                    <div className="p-2.5 rounded-lg bg-panel border border-border">
+                      <div className="text-[10px] text-muted">Next Review</div>
+                      <div className="text-xs font-bold text-foreground mt-0.5">
+                        {schedule.next_review_date || 'Today'}
+                      </div>
+                    </div>
+                    <div className="p-2.5 rounded-lg bg-panel border border-border">
+                      <div className="text-[10px] text-muted">Interval</div>
+                      <div className="text-xs font-bold text-amber-400 mt-0.5">
+                        {schedule.interval_days || 1} day(s)
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Recall Rating Actions */}
+                  <div className="space-y-2 pt-1">
+                    <div className="text-[11px] text-muted">
+                      Log active recall result:
+                    </div>
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                      <button
+                        type="button"
+                        onClick={() => handleRateRecall('forgot')}
+                        className="p-2 rounded-lg bg-panel hover:bg-rose-500/15 border border-border hover:border-rose-500/40 text-xs font-semibold text-rose-400 transition-colors cursor-pointer text-center"
+                      >
+                        Forgot (Day 1)
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleRateRecall('difficult')}
+                        className="p-2 rounded-lg bg-panel hover:bg-amber-500/15 border border-border hover:border-amber-500/40 text-xs font-semibold text-amber-400 transition-colors cursor-pointer text-center"
+                      >
+                        Difficult (+3d)
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleRateRecall('good')}
+                        className="p-2 rounded-lg bg-panel hover:bg-emerald-500/15 border border-border hover:border-emerald-500/40 text-xs font-semibold text-emerald-400 transition-colors cursor-pointer text-center"
+                      >
+                        Good (+7d)
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleRateRecall('easy')}
+                        className="p-2 rounded-lg bg-panel hover:bg-sky-500/15 border border-border hover:border-sky-500/40 text-xs font-semibold text-sky-400 transition-colors cursor-pointer text-center"
+                      >
+                        Easy (+14d)
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Confidence Rating Card */}
+                <div className="p-4 rounded-xl border border-border bg-card space-y-2.5 shadow-sm">
+                  <div className="text-xs font-bold text-foreground">
+                    Confidence Level
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    {[1, 2, 3, 4, 5].map((star) => (
+                      <button
+                        key={star}
+                        type="button"
+                        onClick={() => handleFieldChange('confidence_rating', star)}
+                        className="p-1 text-muted hover:text-amber-400 transition-colors cursor-pointer"
+                        aria-label={`Set confidence to ${star} out of 5`}
+                      >
+                        <Star
+                          className={cn(
+                            'w-5 h-5',
+                            star <= notesData.confidence_rating
+                              ? 'fill-amber-400 text-amber-400'
+                              : 'text-neutral-700'
+                          )}
+                        />
+                      </button>
+                    ))}
+                    <span className="text-xs text-muted ml-2">
+                      {notesData.confidence_rating}/5
+                    </span>
+                  </div>
+                </div>
+
+                {/* Curriculum Info Card */}
+                <div className="p-4 rounded-xl border border-border bg-card space-y-3 shadow-sm">
+                  <div className="text-xs font-bold text-foreground">
+                    Curriculum Details
+                  </div>
+                  <div className="space-y-2 text-xs">
+                    <div className="flex justify-between py-1 border-b border-border">
+                      <span className="text-muted">Step</span>
+                      <span className="font-semibold text-foreground">{topic?.title}</span>
+                    </div>
+                    <div className="flex justify-between py-1 border-b border-border">
+                      <span className="text-muted">Subtopic</span>
+                      <span className="font-semibold text-foreground">{section?.title}</span>
+                    </div>
+                    <div className="flex justify-between py-1 border-b border-border">
+                      <span className="text-muted">Problem #</span>
+                      <span className="font-mono text-amber-400 font-bold">
+                        {problem.problem_number} / 463
+                      </span>
+                    </div>
+                    <div className="flex justify-between py-1">
+                      <span className="text-muted">Difficulty</span>
+                      <span className="font-semibold text-foreground">{problem.difficulty}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
 
-          {/* Right Revision & Meta Panel (4 cols) */}
-          <div className="lg:col-span-4 space-y-5">
-
-            {/* Spaced Repetition Card */}
-            <div className="p-4 rounded-xl border border-border bg-card space-y-4 shadow-sm">
-              <div className="flex items-center justify-between border-b border-border pb-3">
+          {/* Right Column: Persistent Solution Code Panel (5 cols) */}
+          <div className="lg:col-span-5 space-y-4 min-w-0">
+            <div className="rounded-xl border border-border bg-card overflow-hidden sticky top-4 shadow-sm flex flex-col">
+              <div className="flex items-center justify-between px-3.5 py-2.5 border-b border-border bg-elevated/70">
                 <div className="flex items-center gap-2">
-                  <Calendar className="w-4 h-4 text-amber-400" />
-                  <span className="text-xs font-bold text-foreground">Revision Schedule</span>
+                  <Code2 className="w-4 h-4 text-accent" />
+                  <span className="text-xs font-bold text-foreground">Persistent Solution Code</span>
                 </div>
-                <span className="text-[10px] font-bold text-amber-400 bg-amber-400/10 px-2 py-0.5 rounded-full border border-amber-400/20">
-                  Stage {schedule.review_stage || 1}/4
+                <span className="text-[10px] text-muted font-mono uppercase tracking-wider">
+                  {notesData.language}
                 </span>
               </div>
-
-              {/* Next Review Date & Interval */}
-              <div className="grid grid-cols-2 gap-2 text-center">
-                <div className="p-2.5 rounded-lg bg-panel border border-border">
-                  <div className="text-[10px] text-muted">Next Review</div>
-                  <div className="text-xs font-bold text-foreground mt-0.5">
-                    {schedule.next_review_date || 'Today'}
-                  </div>
-                </div>
-                <div className="p-2.5 rounded-lg bg-panel border border-border">
-                  <div className="text-[10px] text-muted">Interval</div>
-                  <div className="text-xs font-bold text-amber-400 mt-0.5">
-                    {schedule.interval_days || 1} day(s)
-                  </div>
-                </div>
-              </div>
-
-              {/* Recall Rating Actions */}
-              <div className="space-y-2 pt-1">
-                <div className="text-[11px] text-muted">
-                  Log active recall result:
-                </div>
-                <div className="grid grid-cols-2 gap-2">
-                  <button
-                    type="button"
-                    onClick={() => handleRateRecall('forgot')}
-                    className="p-2 rounded-lg bg-panel hover:bg-rose-500/15 border border-border hover:border-rose-500/40 text-xs font-semibold text-rose-400 transition-colors cursor-pointer text-center"
-                  >
-                    Forgot (Day 1)
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => handleRateRecall('difficult')}
-                    className="p-2 rounded-lg bg-panel hover:bg-amber-500/15 border border-border hover:border-amber-500/40 text-xs font-semibold text-amber-400 transition-colors cursor-pointer text-center"
-                  >
-                    Difficult (+3d)
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => handleRateRecall('good')}
-                    className="p-2 rounded-lg bg-panel hover:bg-emerald-500/15 border border-border hover:border-emerald-500/40 text-xs font-semibold text-emerald-400 transition-colors cursor-pointer text-center"
-                  >
-                    Good (+7d)
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => handleRateRecall('easy')}
-                    className="p-2 rounded-lg bg-panel hover:bg-sky-500/15 border border-border hover:border-sky-500/40 text-xs font-semibold text-sky-400 transition-colors cursor-pointer text-center"
-                  >
-                    Easy (+14d)
-                  </button>
-                </div>
+              <div className="p-0">
+                <CodeEditor
+                  value={notesData.code}
+                  onChange={(val) => handleFieldChange('code', val)}
+                  language={notesData.language}
+                  onLanguageChange={(lang) => handleFieldChange('language', lang)}
+                  placeholder="Write your Code"
+                  minHeight="540px"
+                  className="border-0 rounded-none"
+                />
               </div>
             </div>
-
-            {/* Confidence Rating Card */}
-            <div className="p-4 rounded-xl border border-border bg-card space-y-2.5 shadow-sm">
-              <div className="text-xs font-bold text-foreground">
-                Confidence Level
-              </div>
-              <div className="flex items-center gap-1.5">
-                {[1, 2, 3, 4, 5].map((star) => (
-                  <button
-                    key={star}
-                    type="button"
-                    onClick={() => handleFieldChange('confidence_rating', star)}
-                    className="p-1 text-muted hover:text-amber-400 transition-colors cursor-pointer"
-                    aria-label={`Set confidence to ${star} out of 5`}
-                  >
-                    <Star
-                      className={cn(
-                        'w-5 h-5',
-                        star <= notesData.confidence_rating
-                          ? 'fill-amber-400 text-amber-400'
-                          : 'text-neutral-700'
-                      )}
-                    />
-                  </button>
-                ))}
-                <span className="text-xs text-muted ml-2">
-                  {notesData.confidence_rating}/5
-                </span>
-              </div>
-            </div>
-
-            {/* Curriculum Info Card */}
-            <div className="p-4 rounded-xl border border-border bg-card space-y-3 shadow-sm">
-              <div className="text-xs font-bold text-foreground">
-                Curriculum Details
-              </div>
-              <div className="space-y-2 text-xs">
-                <div className="flex justify-between py-1 border-b border-border">
-                  <span className="text-muted">Step</span>
-                  <span className="font-semibold text-foreground">{topic?.title}</span>
-                </div>
-                <div className="flex justify-between py-1 border-b border-border">
-                  <span className="text-muted">Subtopic</span>
-                  <span className="font-semibold text-foreground">{section?.title}</span>
-                </div>
-                <div className="flex justify-between py-1 border-b border-border">
-                  <span className="text-muted">Problem #</span>
-                  <span className="font-mono text-amber-400 font-bold">
-                    {problem.problem_number} / 463
-                  </span>
-                </div>
-                <div className="flex justify-between py-1">
-                  <span className="text-muted">Difficulty</span>
-                  <span className="font-semibold text-foreground">{problem.difficulty}</span>
-                </div>
-              </div>
-            </div>
-
           </div>
+
         </div>
 
       </div>

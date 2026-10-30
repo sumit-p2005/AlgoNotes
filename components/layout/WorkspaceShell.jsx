@@ -86,11 +86,15 @@ export function WorkspaceShell({ children }) {
     fetchStats();
   }, [pathname]);
 
-  // Show Topic Tree column on workspace views
+  // Show Topic Tree column on specific workspace views (hide on Topics, All Problems, and New Problem)
+  const isAllProblemsPage = pathname === '/problems';
+  const isTopicsPage = pathname.startsWith('/topics');
+  const isNewProblemPage = pathname === '/problems/new';
   const showTopicTree =
-    pathname.startsWith('/problems') ||
-    pathname.startsWith('/topics') ||
-    pathname === '/dashboard';
+    !isAllProblemsPage &&
+    !isTopicsPage &&
+    !isNewProblemPage &&
+    (pathname.startsWith('/problems/') || pathname === '/dashboard');
 
   return (
     <div className="flex h-screen w-full overflow-hidden bg-page text-foreground">

@@ -19,18 +19,42 @@ import { createClient } from '@/lib/supabase/client';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { DifficultyBadge } from '@/components/ui/Badge';
+import { getTopicsPageNav, saveTopicsPageNav } from '@/lib/utils/userStorage';
 
 export default function TopicsPage() {
   const [topics, setTopics] = useState([]);
   const [problems, setProblems] = useState([]);
   const [selectedTopicId, setSelectedTopicId] = useState(null);
   const [expandedTopics, setExpandedTopics] = useState({});
+  const [userId, setUserId] = useState(null);
   const [isCreatingTopic, setIsCreatingTopic] = useState(false);
   const [newTopicName, setNewTopicName] = useState('');
   const [newTopicParentId, setNewTopicParentId] = useState('');
   const [editingTopicId, setEditingTopicId] = useState(null);
   const [editTopicName, setEditTopicName] = useState('');
   const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function loadUserNav() {
+      try {
+        const supabase = createClient();
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          setUserId(user.id);
+          const savedNav = getTopicsPageNav(user.id);
+          if (savedNav?.expandedFolders) {
+            setExpandedTopics(savedNav.expandedFolders);
+          }
+          if (savedNav?.selectedTopicId) {
+            setSelectedTopicId(savedNav.selectedTopicId);
+          }
+        }
+      } catch (e) {
+        // ignore
+      }
+    }
+    loadUserNav();
+  }, []);
 
   const fetchTopicsAndProblems = useCallback(async () => {
     try {
@@ -57,7 +81,20 @@ export default function TopicsPage() {
 
   const toggleExpand = (id, e) => {
     e.stopPropagation();
-    setExpandedTopics((prev) => ({ ...prev, [id]: !prev[id] }));
+    setExpandedTopics((prev) => {
+      const next = { ...prev, [id]: !prev[id] };
+      if (userId) {
+        saveTopicsPageNav(userId, { expandedFolders: next });
+      }
+      return next;
+    });
+  };
+
+  const handleSelectTopic = (topicId) => {
+    setSelectedTopicId(topicId);
+    if (userId) {
+      saveTopicsPageNav(userId, { selectedTopicId: topicId });
+    }
   };
 
   const handleCreateTopic = async (e) => {
@@ -203,7 +240,7 @@ export default function TopicsPage() {
             return (
               <div key={topic.id} className="space-y-0.5">
                 <div
-                  onClick={() => setSelectedTopicId(topic.id)}
+                  onClick={() => handleSelectTopic(topic.id)}
                   className={`w-full flex items-center justify-between px-2.5 py-2 rounded-lg text-xs cursor-pointer transition-colors ${
                     isSelected
                       ? 'bg-elevated font-semibold text-foreground border-l-2 border-accent'
@@ -242,7 +279,7 @@ export default function TopicsPage() {
                       return (
                         <div
                           key={sub.id}
-                          onClick={() => setSelectedTopicId(sub.id)}
+                          onClick={() => handleSelectTopic(sub.id)}
                           className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-md text-xs cursor-pointer transition-colors ${
                             isSubSelected
                               ? 'bg-elevated font-semibold text-foreground'

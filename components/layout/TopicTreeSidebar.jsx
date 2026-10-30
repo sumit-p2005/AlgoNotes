@@ -14,6 +14,7 @@ import {
   GitFork,
 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
+import { getTopicTreeNav, saveTopicTreeNav } from '@/lib/utils/userStorage';
 
 const STARTER_TREE = [
   {
@@ -55,16 +56,23 @@ const STARTER_TREE = [
 export function TopicTreeSidebar() {
   const [tree, setTree] = useState(STARTER_TREE);
   const [search, setSearch] = useState('');
+  const [userId, setUserId] = useState(null);
   const pathname = usePathname();
 
   useEffect(() => {
     async function loadTreeData() {
       try {
         const supabase = createClient();
-        const [{ data: topicsData }, { data: problemsData }] = await Promise.all([
-          supabase.from('topics').select('*').order('order_index', { ascending: true }),
-          supabase.from('problems').select('id, title, topic_id').order('title', { ascending: true }),
-        ]);
+        const [{ data: topicsData }, { data: problemsData }, { data: authData }] =
+          await Promise.all([
+            supabase.from('topics').select('*').order('order_index', { ascending: true }),
+            supabase.from('problems').select('id, title, topic_id').order('title', { ascending: true }),
+            supabase.auth.getUser().catch(() => ({ data: {} })),
+          ]);
+
+        const uId = authData?.user?.id || null;
+        setUserId(uId);
+        const savedNav = getTopicTreeNav(uId);
 
         if (topicsData && topicsData.length > 0) {
           const rootTopics = topicsData.filter((t) => !t.parent_id);
@@ -84,20 +92,56 @@ export function TopicTreeSidebar() {
             }
           });
 
-          const constructed = rootTopics.map((rt) => ({
-            id: rt.id,
-            name: rt.name,
-            isExpanded: true,
-            problems: probMap[rt.id] || [],
-            subtopics: (subMap[rt.id] || []).map((sub) => ({
-              id: sub.id,
-              name: sub.name,
-              isExpanded: true,
-              problems: probMap[sub.id] || [],
-            })),
-          }));
+          const constructed = rootTopics.map((rt) => {
+            const isRootExp =
+              savedNav?.expandedFolders?.[rt.id] !== undefined
+                ? !!savedNav.expandedFolders[rt.id]
+                : savedNav?.lastTopicId
+                ? savedNav.lastTopicId === rt.id
+                : true;
+
+            return {
+              id: rt.id,
+              name: rt.name,
+              isExpanded: isRootExp,
+              problems: probMap[rt.id] || [],
+              subtopics: (subMap[rt.id] || []).map((sub) => {
+                const isSubExp =
+                  savedNav?.expandedFolders?.[sub.id] !== undefined
+                    ? !!savedNav.expandedFolders[sub.id]
+                    : savedNav?.lastSubtopicId
+                    ? savedNav.lastSubtopicId === sub.id
+                    : false;
+
+                return {
+                  id: sub.id,
+                  name: sub.name,
+                  isExpanded: isSubExp,
+                  problems: probMap[sub.id] || [],
+                };
+              }),
+            };
+          });
 
           setTree(constructed);
+        } else if (savedNav?.expandedFolders && Object.keys(savedNav.expandedFolders).length > 0) {
+          // Restore expansion state for starter tree
+          setTree((prev) =>
+            prev.map((t) => ({
+              ...t,
+              isExpanded:
+                savedNav.expandedFolders[t.id] !== undefined
+                  ? !!savedNav.expandedFolders[t.id]
+                  : t.isExpanded,
+              subtopics: (t.subtopics || []).map((s) => ({
+                ...s,
+                isExpanded:
+                  savedNav.expandedFolders[s.id] !== undefined
+                    ? !!savedNav.expandedFolders[s.id]
+                    : s.isExpanded,
+              })),
+            }))
+          );
         }
       } catch {
         // Retain starter taxonomy if table is empty
@@ -108,7 +152,19 @@ export function TopicTreeSidebar() {
 
   const toggleFolder = (topicId) => {
     setTree((prev) =>
-      prev.map((t) => (t.id === topicId ? { ...t, isExpanded: !t.isExpanded } : t))
+      prev.map((t) => {
+        if (t.id === topicId) {
+          const nextExp = !t.isExpanded;
+          if (userId) {
+            saveTopicTreeNav(userId, {
+              expandedFolders: { [topicId]: nextExp },
+              lastTopicId: topicId,
+            });
+          }
+          return { ...t, isExpanded: nextExp };
+        }
+        return t;
+      })
     );
   };
 
@@ -118,9 +174,20 @@ export function TopicTreeSidebar() {
         if (t.id !== topicId) return t;
         return {
           ...t,
-          subtopics: (t.subtopics || []).map((s) =>
-            s.id === subId ? { ...s, isExpanded: !s.isExpanded } : s
-          ),
+          subtopics: (t.subtopics || []).map((s) => {
+            if (s.id === subId) {
+              const nextExp = !s.isExpanded;
+              if (userId) {
+                saveTopicTreeNav(userId, {
+                  expandedFolders: { [subId]: nextExp },
+                  lastTopicId: topicId,
+                  lastSubtopicId: subId,
+                });
+              }
+              return { ...s, isExpanded: nextExp };
+            }
+            return s;
+          }),
         };
       })
     );
@@ -211,6 +278,14 @@ export function TopicTreeSidebar() {
                       <Link
                         key={prob.id}
                         href={`/problems/${prob.id}`}
+                        onClick={() => {
+                          if (userId) {
+                            saveTopicTreeNav(userId, {
+                              lastTopicId: topic.id,
+                              lastProblemId: prob.id,
+                            });
+                          }
+                        }}
                         className={`w-full flex items-center gap-2 px-2.5 py-1 rounded-md text-[11px] transition-colors ${
                           isCurrent
                             ? 'bg-amber-400/15 text-amber-400 font-semibold'
@@ -263,6 +338,15 @@ export function TopicTreeSidebar() {
                                 <Link
                                   key={prob.id}
                                   href={`/problems/${prob.id}`}
+                                  onClick={() => {
+                                    if (userId) {
+                                      saveTopicTreeNav(userId, {
+                                        lastTopicId: topic.id,
+                                        lastSubtopicId: sub.id,
+                                        lastProblemId: prob.id,
+                                      });
+                                    }
+                                  }}
                                   className={`w-full flex items-center gap-2 px-2.5 py-1 rounded-md text-[11px] transition-colors ${
                                     isCurrent
                                       ? 'bg-amber-400/15 text-amber-400 font-semibold'

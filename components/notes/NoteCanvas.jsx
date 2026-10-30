@@ -26,7 +26,7 @@ function getInitialBlockContent(type) {
     case BLOCK_TYPES.TEXT:
       return { text: '' };
     case BLOCK_TYPES.CODE:
-      return { code: '', language: 'javascript' };
+      return { code: '', language: 'cpp' };
     case BLOCK_TYPES.IMAGE:
       return { url: '', caption: '', widthPercent: 100, alignment: 'center' };
     default:

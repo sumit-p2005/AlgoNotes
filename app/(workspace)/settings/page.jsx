@@ -27,11 +27,11 @@ export default function SettingsPage() {
   const [profile, setProfile] = useState({
     display_name: '',
     email: '',
-    preferred_language: 'javascript',
+    preferred_language: 'cpp',
   });
   const [settings, setSettings] = useState({
     daily_review_goal: 10,
-    preferred_code_language: 'javascript',
+    preferred_code_language: 'cpp',
   });
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -68,7 +68,7 @@ export default function SettingsPage() {
             setProfile({
               display_name: prof.display_name || '',
               email: prof.email || user.email || '',
-              preferred_language: prof.preferred_language || 'javascript',
+              preferred_language: prof.preferred_language || 'cpp',
             });
           } else {
             setProfile((prev) => ({ ...prev, email: user.email || '' }));
@@ -77,7 +77,7 @@ export default function SettingsPage() {
           if (setts) {
             setSettings({
               daily_review_goal: setts.daily_review_goal || 10,
-              preferred_code_language: setts.preferred_code_language || 'javascript',
+              preferred_code_language: setts.preferred_code_language || 'cpp',
             });
           }
         }
@@ -279,10 +279,10 @@ export default function SettingsPage() {
                 setSettings({ ...settings, preferred_code_language: e.target.value })
               }
             >
-              <option value="javascript">JavaScript</option>
-              <option value="python">Python</option>
               <option value="cpp">C++</option>
               <option value="java">Java</option>
+              <option value="python">Python</option>
+              <option value="javascript">JavaScript</option>
               <option value="c">C</option>
             </Select>
           </div>
