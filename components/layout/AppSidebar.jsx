@@ -11,6 +11,7 @@ import {
   FolderTree,
   Grid2X2,
   FileCode2,
+  NotebookPen,
   BarChart3,
   Bookmark,
   Settings,
@@ -23,6 +24,7 @@ import { createClient } from '@/lib/supabase/client';
 
 const NAV_ITEMS = [
   { label: 'Dashboard', href: '/dashboard', icon: Home },
+  { label: 'My Notes', href: '/notes', icon: NotebookPen },
   { label: 'DSA Sheets', href: '/sheets', icon: BookOpen, badgeText: 'A2Z' },
   { label: 'Revision', href: '/revision', icon: CalendarCheck2, showBadge: true },
   { label: 'Topics', href: '/topics', icon: FolderTree },

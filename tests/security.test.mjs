@@ -32,3 +32,4 @@ test('Security - sanitizeRedirectUrl falls back gracefully on empty or non-strin
   assert.equal(sanitizeRedirectUrl(undefined), '/dashboard');
   assert.equal(sanitizeRedirectUrl(null, '/revision'), '/revision');
 });
+

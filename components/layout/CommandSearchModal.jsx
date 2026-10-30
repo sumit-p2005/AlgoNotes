@@ -2,14 +2,14 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-import { Search, FileCode2, BookOpen, Layers, X, ArrowRight } from 'lucide-react';
+import { Search, FileCode2, BookOpen, Layers, X, ArrowRight, NotebookPen } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { DifficultyBadge } from '@/components/ui/Badge';
 
 export function CommandSearchModal({ isOpen, onClose }) {
   const router = useRouter();
   const [query, setQuery] = useState('');
-  const [results, setResults] = useState({ problems: [], topics: [], patterns: [] });
+  const [results, setResults] = useState({ notes: [], problems: [], topics: [], patterns: [] });
   const [loading, setLoading] = useState(false);
   const inputRef = useRef(null);
 
@@ -20,7 +20,7 @@ export function CommandSearchModal({ isOpen, onClose }) {
     } else {
       const timer = setTimeout(() => {
         setQuery('');
-        setResults({ problems: [], topics: [], patterns: [] });
+        setResults({ notes: [], problems: [], topics: [], patterns: [] });
       }, 0);
       return () => clearTimeout(timer);
     }
@@ -46,7 +46,7 @@ export function CommandSearchModal({ isOpen, onClose }) {
     const trimmed = query.trim();
     if (!trimmed) {
       const timer = setTimeout(() => {
-        setResults({ problems: [], topics: [], patterns: [] });
+        setResults({ notes: [], problems: [], topics: [], patterns: [] });
         setLoading(false);
       }, 0);
       return () => clearTimeout(timer);
@@ -58,21 +58,31 @@ export function CommandSearchModal({ isOpen, onClose }) {
         const supabase = createClient();
         const trimmed = query.trim();
 
-        // Search problems
+        // 1. Search user notes
+        let notesData = [];
+        try {
+          const res = await fetch(`/api/notes?search=${encodeURIComponent(trimmed)}`);
+          if (res.ok) {
+            const data = await res.json();
+            if (data.success && data.notes) notesData = data.notes.slice(0, 5);
+          }
+        } catch {}
+
+        // 2. Search problems
         const { data: problems } = await supabase
           .from('problems')
           .select('id, title, difficulty, problem_number')
           .ilike('title', `%${trimmed}%`)
           .limit(5);
 
-        // Search topics
+        // 3. Search topics
         const { data: topics } = await supabase
           .from('topics')
           .select('id, name')
           .ilike('name', `%${trimmed}%`)
           .limit(5);
 
-        // Search patterns
+        // 4. Search patterns
         const { data: patterns } = await supabase
           .from('patterns')
           .select('id, name')
@@ -80,6 +90,7 @@ export function CommandSearchModal({ isOpen, onClose }) {
           .limit(5);
 
         setResults({
+          notes: notesData || [],
           problems: problems || [],
           topics: topics || [],
           patterns: patterns || [],
@@ -102,7 +113,10 @@ export function CommandSearchModal({ isOpen, onClose }) {
   };
 
   const totalResults =
-    results.problems.length + results.topics.length + results.patterns.length;
+    (results.notes?.length || 0) +
+    results.problems.length +
+    results.topics.length +
+    results.patterns.length;
 
   return (
     <div className="fixed inset-0 z-50 flex items-start justify-center pt-16 sm:pt-24 px-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-150">
@@ -155,6 +169,42 @@ export function CommandSearchModal({ isOpen, onClose }) {
           {!loading && !query && (
             <div className="p-6 text-center text-xs text-muted">
               Type to quickly navigate anywhere in your AlgoNotes notebook.
+            </div>
+          )}
+
+          {/* My Notes */}
+          {results.notes?.length > 0 && (
+            <div className="py-2">
+              <div className="text-[11px] font-semibold tracking-wider text-muted uppercase px-3 pb-1.5 flex items-center gap-1.5">
+                <NotebookPen className="w-3.5 h-3.5 text-accent" /> My Notes
+              </div>
+              {results.notes.map((n) => (
+                <button
+                  key={n.id}
+                  type="button"
+                  onClick={() => navigateTo(`/notes/${n.id}`)}
+                  className="w-full flex items-center justify-between px-3 py-2 text-left rounded-lg hover:bg-elevated text-sm transition-colors group cursor-pointer"
+                >
+                  <div className="flex flex-col truncate pr-2">
+                    <span className="font-medium text-foreground group-hover:text-accent truncate">
+                      {n.title || 'Untitled Note'}
+                    </span>
+                    {n.description && (
+                      <span className="text-xs text-muted truncate">
+                        {n.description}
+                      </span>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    {n.folder?.name && (
+                      <span className="text-[10px] px-1.5 py-0.5 rounded bg-panel border border-border text-muted">
+                        {n.folder.name}
+                      </span>
+                    )}
+                    <ArrowRight className="w-3.5 h-3.5 text-muted opacity-0 group-hover:opacity-100 transition-opacity" />
+                  </div>
+                </button>
+              ))}
             </div>
           )}
 

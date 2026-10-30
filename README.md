@@ -79,6 +79,10 @@ Execute the following migrations in your Supabase SQL Editor in exact chronologi
    - Creates helper procedures: `upsert_topic_progress_bulk`, `upsert_problem_progress_bulk`.
 3. `supabase/migrations/003_seed_striver_curriculum.sql`
    - Populates the complete 463-problem Striver A2Z DSA curriculum with deterministic UUIDs and idempotent `ON CONFLICT` clauses.
+4. `supabase/migrations/004_my_notes_blocks.sql`
+   - Creates `user_note_folders`, `user_notes`, and `note_blocks` with cascade relationships and Row Level Security.
+   - Creates atomic RPC procedure `sync_note_blocks`.
+   - Creates Supabase Storage bucket `user-note-images` with user-folder upload policies.
 
 ---
 
