@@ -99,6 +99,25 @@ export function TopicTreeSidebar() {
       }
     }
     loadUserData();
+
+    const handleStatusUpdate = (e) => {
+      const { problemId, status, isCurriculum } = e.detail || {};
+      if (!problemId) return;
+
+      if (isCurriculum) {
+        setUserProgressMap((prev) => ({
+          ...prev,
+          [problemId]: status,
+        }));
+      } else {
+        setCustomProblems((prev) =>
+          prev.map((p) => (p.id === problemId ? { ...p, status } : p))
+        );
+      }
+    };
+
+    window.addEventListener('problem-status-updated', handleStatusUpdate);
+    return () => window.removeEventListener('problem-status-updated', handleStatusUpdate);
   }, []);
 
   // Construct the unified curriculum and custom tree
@@ -208,12 +227,12 @@ export function TopicTreeSidebar() {
       {/* Header: DSA Problems + New Problem Note */}
       <div className="flex items-center justify-between h-13 px-3.5 border-b border-border bg-panel shrink-0">
         <div className="flex items-center gap-2 font-bold text-foreground">
-          <FolderTree className="w-4 h-4 text-amber-400" />
+          <FolderTree className="w-4 h-4 text-accent-icon" />
           <span className="tracking-wide">DSA Problems</span>
         </div>
         <Link
           href="/problems/new"
-          className="p-1.5 rounded-lg border border-border bg-elevated/40 hover:bg-accent hover:text-accent-text text-muted transition-colors flex items-center gap-1 font-semibold text-[11px] cursor-pointer"
+          className="p-1.5 rounded-lg border border-border bg-elevated/60 hover:bg-accent hover:text-accent-text text-secondary hover:text-foreground transition-colors flex items-center gap-1 font-semibold text-[11px] cursor-pointer"
           title="Create New Problem Note"
           aria-label="New Problem Note"
         >
@@ -225,13 +244,13 @@ export function TopicTreeSidebar() {
       {/* Search Input */}
       <div className="p-2.5 border-b border-border bg-panel shrink-0">
         <div className="relative">
-          <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-muted" />
+          <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-icon" />
           <input
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search problems, topics..."
-            className="w-full pl-8 pr-2.5 py-1.5 rounded-lg border border-border bg-elevated/40 text-foreground placeholder:text-muted focus:outline-none focus:ring-1 focus:ring-accent text-xs"
+            className="w-full pl-8 pr-2.5 py-1.5 rounded-lg border border-border bg-elevated/50 text-foreground placeholder:text-muted focus:outline-none focus:ring-1 focus:ring-accent text-xs"
           />
         </div>
       </div>
@@ -278,18 +297,18 @@ export function TopicTreeSidebar() {
               >
                 <div className="flex items-center gap-1.5 min-w-0">
                   {isTopicExpanded ? (
-                    <ChevronDown className="w-3.5 h-3.5 text-muted shrink-0" />
+                    <ChevronDown className="w-3.5 h-3.5 text-icon group-hover:text-foreground shrink-0" />
                   ) : (
-                    <ChevronRight className="w-3.5 h-3.5 text-muted shrink-0" />
+                    <ChevronRight className="w-3.5 h-3.5 text-icon group-hover:text-foreground shrink-0" />
                   )}
                   {isTopicExpanded ? (
-                    <FolderOpen className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                    <FolderOpen className="w-3.5 h-3.5 text-accent-icon shrink-0" />
                   ) : (
-                    <Folder className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                    <Folder className="w-3.5 h-3.5 text-accent-icon shrink-0" />
                   )}
-                  <span className="truncate font-medium text-xs">{topic.name}</span>
+                  <span className="truncate font-semibold text-xs text-foreground">{topic.name}</span>
                 </div>
-                <span className="text-[10px] text-muted font-mono px-1 rounded bg-elevated/50 shrink-0">
+                <span className="text-[10px] text-secondary font-mono px-1.5 py-0.2 rounded bg-elevated shrink-0">
                   {topic.totalProblems}
                 </span>
               </button>
@@ -306,28 +325,28 @@ export function TopicTreeSidebar() {
                         <button
                           type="button"
                           onClick={() => toggleSubtopic(sub.id, topic.id)}
-                          className="w-full flex items-center justify-between gap-1.5 px-2 py-1 rounded-md hover:bg-elevated text-muted hover:text-foreground transition-colors text-left cursor-pointer"
+                          className="w-full flex items-center justify-between gap-1.5 px-2 py-1 rounded-md hover:bg-elevated text-secondary hover:text-foreground transition-colors text-left cursor-pointer"
                         >
                           <div className="flex items-center gap-1.5 min-w-0">
                             {sub.problems && sub.problems.length > 0 ? (
                               isSubExpanded ? (
-                                <ChevronDown className="w-3 h-3 text-muted shrink-0" />
+                                <ChevronDown className="w-3 h-3 text-icon shrink-0" />
                               ) : (
-                                <ChevronRight className="w-3 h-3 text-muted shrink-0" />
+                                <ChevronRight className="w-3 h-3 text-icon shrink-0" />
                               )
                             ) : (
                               <span className="w-3 shrink-0" />
                             )}
                             <span className="truncate text-[11px] font-medium">{sub.name}</span>
                           </div>
-                          <span className="text-[9px] text-muted/70 font-mono">
+                          <span className="text-[9px] text-muted font-mono">
                             {sub.problems ? sub.problems.length : 0}
                           </span>
                         </button>
 
                         {/* Problems List under this Subtopic */}
                         {isSubExpanded && sub.problems && sub.problems.length > 0 && (
-                          <div className="pl-4 space-y-0.5 border-l border-border/40 ml-2 my-0.5">
+                          <div className="pl-4 space-y-0.5 border-l border-border/60 ml-2 my-0.5">
                             {sub.problems.map((prob) => {
                               const isCurrent =
                                 pathname === `/problems/${prob.id}` ||
@@ -349,19 +368,21 @@ export function TopicTreeSidebar() {
                                   className={cn(
                                     'w-full flex items-center justify-between gap-1.5 px-2 py-1 rounded-md text-[11px] transition-colors group cursor-pointer',
                                     isCurrent
-                                      ? 'bg-amber-400/15 text-amber-400 font-semibold border-l-2 border-amber-400 pl-1.5'
-                                      : 'text-muted hover:text-foreground hover:bg-elevated'
+                                      ? 'bg-accent-subtle dark:bg-accent/15 text-accent-selected-text font-bold border-l-2 border-accent-border pl-1.5 shadow-xs'
+                                      : 'text-secondary hover:text-foreground hover:bg-elevated'
                                   )}
                                   title={prob.title}
                                 >
                                   <div className="flex items-center gap-1.5 min-w-0 flex-1">
                                     {/* Real Status Indicator */}
                                     {prob.status === 'solved' ? (
-                                      <CheckCircle2 className="w-3 h-3 text-emerald-400 shrink-0" />
+                                      <CheckCircle2 className="w-3 h-3 text-emerald-500 shrink-0" />
                                     ) : prob.status === 'attempted' ? (
-                                      <span className="w-2 h-2 rounded-full bg-amber-400 shrink-0" />
+                                      <span className="w-2 h-2 rounded-full bg-blue-500 shrink-0" />
+                                    ) : prob.status === 'needs revision' ? (
+                                      <span className="w-2 h-2 rounded-full bg-amber-500 shrink-0" />
                                     ) : prob.hasNote ? (
-                                      <FileText className="w-3 h-3 text-sky-400 shrink-0" />
+                                      <FileText className="w-3 h-3 text-sky-500 shrink-0" />
                                     ) : (
                                       <span className="w-1.5 h-1.5 rounded-full bg-muted/40 shrink-0" />
                                     )}

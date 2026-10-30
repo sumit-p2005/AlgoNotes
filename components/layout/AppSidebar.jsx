@@ -128,15 +128,15 @@ export function AppSidebar({
                 className={cn(
                   'flex items-center justify-between px-3 py-2 rounded-xl text-xs transition-colors group',
                   isActive
-                    ? 'bg-amber-400/10 text-amber-400 font-semibold'
-                    : 'text-muted hover:text-foreground hover:bg-panel'
+                    ? 'bg-accent-subtle/90 dark:bg-accent/10 border border-accent-border/70 dark:border-accent/30 text-accent-selected-text font-bold shadow-xs'
+                    : 'text-secondary hover:text-foreground hover:bg-panel border border-transparent'
                 )}
               >
                 <div className="flex items-center gap-3">
                   <Icon
                     className={cn(
                       'w-4 h-4 transition-colors',
-                      isActive ? 'text-amber-400' : 'text-muted group-hover:text-foreground'
+                      isActive ? 'text-accent-icon' : 'text-icon group-hover:text-foreground'
                     )}
                   />
                   <span>{item.label}</span>
@@ -148,7 +148,7 @@ export function AppSidebar({
                   </span>
                 )}
                 {item.badgeText && (
-                  <span className="px-1.5 py-0.5 rounded-md bg-amber-400/20 text-amber-400 text-[10px] font-bold border border-amber-400/30">
+                  <span className="px-1.5 py-0.5 rounded-md bg-accent-subtle border border-accent-border text-accent-selected-text text-[10px] font-bold">
                     {item.badgeText}
                   </span>
                 )}

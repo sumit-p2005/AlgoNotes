@@ -63,14 +63,14 @@ export function DailyReviewModal({ dueCount = 0 }) {
         </button>
 
         <div className="flex items-center gap-3 mb-4">
-          <div className="w-10 h-10 rounded-xl bg-amber-400/20 border border-amber-400/30 flex items-center justify-center text-amber-500">
+          <div className="w-10 h-10 rounded-xl bg-accent-subtle/80 border border-accent-border/50 flex items-center justify-center text-accent-icon">
             <CalendarCheck2 className="w-5 h-5" />
           </div>
           <div>
             <h3 className="font-semibold text-base text-foreground">
               Daily Spaced Repetition Due
             </h3>
-            <p className="text-xs text-muted">
+            <p className="text-xs text-secondary">
               Active recall keeps your DSA patterns fresh.
             </p>
           </div>
@@ -78,8 +78,8 @@ export function DailyReviewModal({ dueCount = 0 }) {
 
         <div className="p-4 rounded-xl border border-border bg-elevated/50 mb-5 flex items-center justify-between">
           <div>
-            <span className="text-2xl font-bold text-amber-400">{dueCount}</span>
-            <span className="text-xs text-muted ml-2">problems scheduled for recall today</span>
+            <span className="text-2xl font-bold text-accent-icon">{dueCount}</span>
+            <span className="text-xs text-secondary ml-2">problems scheduled for recall today</span>
           </div>
           <span className="text-xs text-muted flex items-center gap-1">
             <Clock className="w-3.5 h-3.5" /> ~{Math.max(5, dueCount * 2)} mins

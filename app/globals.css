@@ -3,43 +3,51 @@
 @layer base {
   :root {
     /* Light Mode Palette: warm off-white workspace, distinct soft-grey sidebars, crisp white cards */
-    --bg-page: #FAFAF8;
-    --bg-sidebar: #F1F2EF;
-    --bg-sidebar-secondary: #F4F3EF;
+    --bg-page: #F8F8F5;
+    --bg-sidebar: #F0F1EE;
+    --bg-sidebar-secondary: #F4F5F2;
     --bg-panel: #FFFFFF;
     --bg-surface: #FFFFFF;
     --bg-card: #FFFFFF;
-    --bg-elevated: #EAECE8;
-    --text-primary: #171717;
-    --text-secondary: #4B524E;
-    --text-muted: #6B716D;
-    --border-color: #E2E4E0;
-    --border-strong: #CDD0CA;
-    --accent: #E5A900;
-    --accent-hover: #D49A00;
+    --bg-elevated: #E8EAE5;
+    --text-primary: #252A31;
+    --text-secondary: #59636E;
+    --text-muted: #727C86;
+    --text-icon: #58636D;
+    --border-color: #DDE1DC;
+    --border-strong: #CDD2CB;
+    --accent: #E6A900;
+    --accent-hover: #C98F00;
     --accent-text: #000000;
-    --accent-subtle: #FEF3C7;
-    --accent-glow: #E5A90026;
+    --accent-subtle: #FFF1CC;
+    --accent-border: #E6B43B;
+    --accent-selected-text: #805500;
+    --accent-icon: #B77A00;
+    --accent-glow: #E6A90026;
   }
 
   .dark {
     /* Dark Mode Palette: pure black workspace (#050505), charcoal sidebar (#101010), secondary panel (#151515), dark card (#101210) */
     --bg-page: #050505;
     --bg-sidebar: #101010;
-    --bg-sidebar-secondary: #151515;
-    --bg-panel: #121412;
-    --bg-surface: #121412;
-    --bg-card: #101210;
-    --bg-elevated: #171B17;
+    --bg-sidebar-secondary: #141714;
+    --bg-panel: #111311;
+    --bg-surface: #111311;
+    --bg-card: #0F120F;
+    --bg-elevated: #181C18;
     --text-primary: #F5F5F0;
     --text-secondary: #A3ACA3;
     --text-muted: #788278;
-    --border-color: #252525;
+    --text-icon: #8A948A;
+    --border-color: #242824;
     --border-strong: #333833;
     --accent: #FACC15;
     --accent-hover: #EAB308;
     --accent-text: #000000;
     --accent-subtle: #29240A;
+    --accent-border: #FACC1566;
+    --accent-selected-text: #FACC15;
+    --accent-icon: #FACC15;
     --accent-glow: #FACC1533;
   }
 
@@ -67,12 +75,16 @@
   --color-foreground: var(--text-primary);
   --color-secondary: var(--text-secondary);
   --color-muted: var(--text-muted);
+  --color-icon: var(--text-icon);
   --color-border: var(--border-color);
   --color-border-strong: var(--border-strong);
   --color-accent: var(--accent);
   --color-accent-hover: var(--accent-hover);
   --color-accent-text: var(--accent-text);
   --color-accent-subtle: var(--accent-subtle);
+  --color-accent-border: var(--accent-border);
+  --color-accent-selected-text: var(--accent-selected-text);
+  --color-accent-icon: var(--accent-icon);
   --color-accent-glow: var(--accent-glow);
 }
 

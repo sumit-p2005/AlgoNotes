@@ -86,17 +86,17 @@ export function NotesListSidebar({
           type="button"
           onClick={() => onSelectFolderFilter(null)}
           className={cn(
-            'w-full flex items-center justify-between px-2.5 py-1.5 rounded-xl text-xs font-medium transition-colors',
+            'w-full flex items-center justify-between px-2.5 py-1.5 rounded-xl text-xs font-medium transition-colors cursor-pointer',
             selectedFolderId === null
-              ? 'bg-accent/15 text-accent font-semibold'
-              : 'text-muted hover:text-foreground hover:bg-panel'
+              ? 'bg-accent-subtle/80 dark:bg-accent/15 border border-accent-border/60 text-accent-selected-text font-bold'
+              : 'text-secondary hover:text-foreground hover:bg-panel border border-transparent'
           )}
         >
           <div className="flex items-center gap-2">
-            <Layers className="w-3.5 h-3.5" />
+            <Layers className="w-3.5 h-3.5 text-icon" />
             <span>All Notes</span>
           </div>
-          <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-panel border border-border/80">
+          <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-panel border border-border">
             {totalNotes}
           </span>
         </button>
@@ -105,17 +105,17 @@ export function NotesListSidebar({
           type="button"
           onClick={() => onSelectFolderFilter('favourites')}
           className={cn(
-            'w-full flex items-center justify-between px-2.5 py-1.5 rounded-xl text-xs font-medium transition-colors',
+            'w-full flex items-center justify-between px-2.5 py-1.5 rounded-xl text-xs font-medium transition-colors cursor-pointer',
             selectedFolderId === 'favourites'
-              ? 'bg-accent/15 text-accent font-semibold'
-              : 'text-muted hover:text-foreground hover:bg-panel'
+              ? 'bg-accent-subtle/80 dark:bg-accent/15 border border-accent-border/60 text-accent-selected-text font-bold'
+              : 'text-secondary hover:text-foreground hover:bg-panel border border-transparent'
           )}
         >
           <div className="flex items-center gap-2">
-            <Star className="w-3.5 h-3.5 text-amber-400 fill-amber-400/30" />
+            <Star className="w-3.5 h-3.5 text-accent-icon fill-accent/30" />
             <span>Favourites</span>
           </div>
-          <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-panel border border-border/80">
+          <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-panel border border-border">
             {favouritesCount}
           </span>
         </button>
@@ -219,7 +219,7 @@ export function NotesListSidebar({
                 className={cn(
                   'group relative p-3 rounded-xl border transition-all cursor-pointer text-left',
                   isSelected
-                    ? 'border-accent/40 bg-accent/10 shadow-xs'
+                    ? 'border-accent-border/70 bg-accent-subtle/80 dark:bg-accent/15 text-accent-selected-text shadow-xs'
                     : 'border-border/60 bg-panel/60 hover:bg-panel hover:border-border'
                 )}
               >
@@ -227,7 +227,7 @@ export function NotesListSidebar({
                   <h3
                     className={cn(
                       'text-xs font-bold line-clamp-1 flex-1',
-                      isSelected ? 'text-accent' : 'text-foreground group-hover:text-foreground'
+                      isSelected ? 'text-accent-selected-text' : 'text-foreground group-hover:text-foreground'
                     )}
                   >
                     {note.title || 'Untitled Note'}

@@ -155,11 +155,13 @@ export function ProblemDetailView({ problemId }) {
               external_url: currProb.external_url || '',
               difficulty: currProb.difficulty || 'Medium',
               status:
-                userProgress?.status === 'solved'
+                userProgress?.status?.toLowerCase() === 'solved'
                   ? 'Solved'
-                  : userProgress?.status === 'attempted'
+                  : userProgress?.status?.toLowerCase() === 'attempted'
                   ? 'Attempted'
-                  : 'Saved',
+                  : userProgress?.status?.toLowerCase() === 'needs revision'
+                  ? 'Needs revision'
+                  : 'Not started',
               summary: userNotes?.intuition || '',
               pattern_used: userNotes?.pattern_used || '',
               recognition_clues: userNotes?.pattern_cues || '',

@@ -31,7 +31,11 @@ export async function PUT(request, { params }) {
     try {
       const supabase = await createClient();
       const { data: { user } } = await supabase.auth.getUser();
-      if (user) userId = user.id;
+      if (user) {
+        userId = user.id;
+      } else if (process.env.NEXT_PUBLIC_SUPABASE_URL && !process.env.NEXT_PUBLIC_SUPABASE_URL.includes('your-project.supabase.co')) {
+        return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
+      }
     } catch {}
 
     const body = await request.json().catch(() => ({}));
@@ -51,7 +55,11 @@ export async function DELETE(request, { params }) {
     try {
       const supabase = await createClient();
       const { data: { user } } = await supabase.auth.getUser();
-      if (user) userId = user.id;
+      if (user) {
+        userId = user.id;
+      } else if (process.env.NEXT_PUBLIC_SUPABASE_URL && !process.env.NEXT_PUBLIC_SUPABASE_URL.includes('your-project.supabase.co')) {
+        return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
+      }
     } catch {}
 
     await deleteNote(userId, noteId);

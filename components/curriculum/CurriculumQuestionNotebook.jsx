@@ -28,6 +28,7 @@ import { createClient } from '@/lib/supabase/client';
 import { saveCurriculumNav } from '@/lib/utils/userStorage';
 import { CodeEditor } from '@/components/editor/CodeEditor';
 import { calculateNextReview, initializeSchedule } from '@/lib/revision/scheduler';
+import { ProblemStatusControl } from '@/components/problems/ProblemStatusControl';
 
 export function CurriculumQuestionNotebook({
   problem,
@@ -273,26 +274,13 @@ export function CurriculumQuestionNotebook({
               )}
             </div>
 
-            {/* Status Dropdown */}
-            <select
-              value={status}
-              onChange={(e) => handleStatusChange(e.target.value)}
-              className={cn(
-                'px-3 py-1.5 rounded-xl text-xs font-bold border focus:outline-none transition-colors cursor-pointer',
-                status === 'Solved'
-                  ? 'bg-emerald-500/15 border-emerald-500/40 text-emerald-400'
-                  : status === 'Attempted'
-                  ? 'bg-blue-500/15 border-blue-500/40 text-blue-400'
-                  : status === 'Needs revision'
-                  ? 'bg-amber-400/15 border-amber-400/40 text-amber-400'
-                  : 'bg-panel border-border text-muted hover:text-foreground'
-              )}
-            >
-              <option value="Not started">Not started</option>
-              <option value="Attempted">Attempted</option>
-              <option value="Solved">Solved</option>
-              <option value="Needs revision">Needs revision</option>
-            </select>
+            {/* Dedicated Problem Status Control */}
+            <ProblemStatusControl
+              status={status}
+              onChange={(newStatus) => handleStatusChange(newStatus)}
+              problemId={problem.id}
+              isCurriculum={true}
+            />
 
             {/* Manual Save Button */}
             <button

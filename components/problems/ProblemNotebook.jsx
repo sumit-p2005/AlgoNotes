@@ -36,6 +36,7 @@ import {
 import { createClient } from '@/lib/supabase/client';
 import { CodeEditor } from '@/components/editor/CodeEditor';
 import { calculateNextReview, initializeSchedule } from '@/lib/revision/scheduler';
+import { ProblemStatusControl } from '@/components/problems/ProblemStatusControl';
 
 export function ProblemNotebook({
   initialProblem,
@@ -533,16 +534,12 @@ export function ProblemNotebook({
             <option value="Hard" className="bg-panel text-foreground">Hard</option>
           </select>
 
-          {/* Status selector pill */}
-          <select
-            value={formData.status}
-            onChange={(e) => updateField('status', e.target.value)}
-            className="px-2.5 py-1 rounded-full text-xs font-medium bg-panel border border-border text-foreground/90 focus:outline-none cursor-pointer"
-          >
-            <option value="Saved">Saved</option>
-            <option value="Attempted">Attempted</option>
-            <option value="Solved">Solved</option>
-          </select>
+          {/* Dedicated Problem Status Control */}
+          <ProblemStatusControl
+            status={formData.status}
+            onChange={(newStatus) => updateField('status', newStatus)}
+            problemId={formData.id}
+          />
 
           {/* Tags Pills */}
           {(formData.tags || []).map((tag) => (
