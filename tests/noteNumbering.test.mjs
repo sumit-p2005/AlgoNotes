@@ -94,3 +94,4 @@ test('Note Numbering - Does not modify or mutate user content text', () => {
   calculateBlockNumbers(blocks);
   assert.equal(blocks[0].content.text, 'Dynamic Programming', 'Content text must remain un-mutated');
 });
+

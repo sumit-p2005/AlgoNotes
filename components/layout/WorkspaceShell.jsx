@@ -86,15 +86,22 @@ export function WorkspaceShell({ children }) {
     fetchStats();
   }, [pathname]);
 
-  // Show Topic Tree column on specific workspace views (hide on Topics, All Problems, and New Problem)
-  const isAllProblemsPage = pathname === '/problems';
+  // Show dedicated Column 2 (DSA Problems Sidebar) on Problems, Sheets, and Dashboard workspaces
   const isTopicsPage = pathname.startsWith('/topics');
-  const isNewProblemPage = pathname === '/problems/new';
+  const isNotesPage = pathname.startsWith('/notes');
+  const isRevisionPage = pathname.startsWith('/revision');
+  const isAnalyticsPage = pathname.startsWith('/analytics');
+  const isBookmarksPage = pathname.startsWith('/bookmarks');
+  const isSettingsPage = pathname.startsWith('/settings');
+
   const showTopicTree =
-    !isAllProblemsPage &&
     !isTopicsPage &&
-    !isNewProblemPage &&
-    (pathname.startsWith('/problems/') || pathname === '/dashboard');
+    !isNotesPage &&
+    !isRevisionPage &&
+    !isAnalyticsPage &&
+    !isBookmarksPage &&
+    !isSettingsPage &&
+    (pathname.startsWith('/problems') || pathname.startsWith('/sheets') || pathname === '/dashboard');
 
   return (
     <div className="flex h-screen w-full overflow-hidden bg-page text-foreground">

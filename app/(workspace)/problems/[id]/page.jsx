@@ -4,6 +4,8 @@ import React, { useState, useEffect, use } from 'react';
 import { useRouter } from 'next/navigation';
 import { ProblemNotebook } from '@/components/problems/ProblemNotebook';
 import { createClient } from '@/lib/supabase/client';
+import { saveTopicTreeNav } from '@/lib/utils/userStorage';
+import striverA2ZData from '@/lib/curriculum/striver-a2z.json';
 
 export default function ProblemDetailPage({ params }) {
   const unwrappedParams = use(params);
@@ -19,8 +21,14 @@ export default function ProblemDetailPage({ params }) {
     async function loadProblemData() {
       try {
         const supabase = createClient();
+        const { data: { user } } = await supabase.auth.getUser();
 
-        // Check if problemId is a valid UUID
+        // Persist navigation location for current user
+        if (user?.id) {
+          saveTopicTreeNav(user.id, { lastProblemId: problemId });
+        }
+
+        // 1. Check if problem is in user's custom 'problems' table
         const isUUID =
           /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
             problemId
@@ -36,7 +44,7 @@ export default function ProblemDetailPage({ params }) {
 
           if (!error && data) probData = data;
         } else {
-          // Fallback: search by title if a slug was provided
+          // Fallback: search by title if slug was provided
           const cleanTitle = problemId.replace(/-/g, ' ');
           const { data } = await supabase
             .from('problems')
@@ -47,7 +55,7 @@ export default function ProblemDetailPage({ params }) {
           if (data) probData = data;
         }
 
-        // Fetch topics, patterns, links, and schedules
+        // Fetch topics and patterns
         const [{ data: tData }, { data: pData }] = await Promise.all([
           supabase.from('topics').select('id, name').order('order_index', { ascending: true }),
           supabase.from('patterns').select('id, name').order('name', { ascending: true }),
@@ -62,67 +70,116 @@ export default function ProblemDetailPage({ params }) {
           probData.selected_pattern_ids = patLinks ? patLinks.map((p) => p.pattern_id) : [];
           probData.review_schedule = schedData || null;
           setProblem(probData);
-        } else if (problemId === '3sum') {
-          // If 3sum is visited as demo reference when not yet seeded in DB
-          setProblem({
-            id: null,
-            title: '3Sum',
-            problem_number: '15',
-            external_url: 'https://leetcode.com/problems/3sum/',
-            difficulty: 'Medium',
-            status: 'Solved',
-            summary:
-              'Given an integer array nums, return all the triplets [nums[i], nums[j], nums[k]] such that i != j, i != k, j != k, and nums[i] + nums[j] + nums[k] == 0.',
-            recognition_clues:
-              'Used when we need to find a pair/triplet in a sorted array.',
-            key_points:
-              '• Sort the array first.\n• Fix one element and use two pointers for the rest.\n• Skip duplicates to avoid repeated triplets.\n• Time Complexity: O(n²)',
-            brute_force_approach:
-              'Three nested loops checking all possible triplets O(n³).',
-            optimised_approach:
-              'Sort the array in O(n log n). Loop through index i, and for each i, maintain two pointers left = i+1 and right = n-1. Move pointers based on sum and skip identical adjacent values.',
-            code: `class Solution {
-    public List<List<Integer>> threeSum(int[] nums) {
-        Arrays.sort(nums);
-        List<List<Integer>> res = new ArrayList<>();
-        int n = nums.length;
+        } else {
+          // 2. Check if problem is in preinstalled Striver A2Z Curriculum
+          const currProb = (striverA2ZData?.problems || []).find(
+            (p) =>
+              p.id === problemId ||
+              String(p.problem_number) === String(problemId) ||
+              p.title.toLowerCase().replace(/[^a-z0-9]+/g, '-') === problemId
+          );
 
-        for (int i = 0; i < n - 2; i++) {
-            if (i > 0 && nums[i] == nums[i - 1]) continue;
-            int left = i + 1, right = n - 1;
+          if (currProb) {
+            let userNotes = null;
+            let userProgress = null;
+            let userSched = null;
 
-            while (left < right) {
-                int sum = nums[i] + nums[left] + nums[right];
-                if (sum == 0) {
-                    res.add(Arrays.asList(nums[i], nums[left], nums[right]));
-                    while (left < right && nums[left] == nums[left + 1]) left++;
-                    while (left < right && nums[right] == nums[right - 1]) right--;
-                    left++;
-                    right--;
-                } else if (sum < 0) {
-                    left++;
-                } else {
-                    right--;
-                }
+            if (user?.id) {
+              const [{ data: nData }, { data: prData }, { data: scData }] = await Promise.all([
+                supabase
+                  .from('user_curriculum_notes')
+                  .select('*')
+                  .eq('user_id', user.id)
+                  .eq('problem_id', currProb.id)
+                  .maybeSingle(),
+                supabase
+                  .from('user_curriculum_progress')
+                  .select('*')
+                  .eq('user_id', user.id)
+                  .eq('problem_id', currProb.id)
+                  .maybeSingle(),
+                supabase
+                  .from('user_curriculum_review_schedules')
+                  .select('*')
+                  .eq('user_id', user.id)
+                  .eq('problem_id', currProb.id)
+                  .maybeSingle(),
+              ]);
+
+              userNotes = nData;
+              userProgress = prData;
+              userSched = scData;
             }
-        }
-        return res;
-    }
-}`,
-            language: 'java',
-            time_complexity: 'O(n²)',
-            space_complexity: 'O(1) auxiliary',
-            common_mistakes: 'Not skipping duplicates, resulting in repeated triplets.',
-            edge_cases: 'Array length < 3, all zeroes, no valid triplet.',
-            additional_notes:
-              '• Can be extended to k-Sum problem.\n• Important to handle duplicates carefully.\n• Practice variations like 4Sum.\n• Common mistake: not skipping duplicates.',
-            personal_notes: '',
-            confidence_rating: 4,
-            is_bookmarked: true,
-            is_learned: true,
-            tags: ['array', 'two-pointers', 'sorting'],
-            topic_id: tData?.[0]?.id || null,
-          });
+
+            // Genuinely empty notebook if user has not yet written personal notes
+            setProblem({
+              id: currProb.id,
+              is_curriculum: true,
+              sheet_id: currProb.sheet_id,
+              title: currProb.title,
+              problem_number: String(currProb.problem_number || ''),
+              external_url: currProb.external_url || '',
+              difficulty: currProb.difficulty || 'Medium',
+              status:
+                userProgress?.status === 'solved'
+                  ? 'Solved'
+                  : userProgress?.status === 'attempted'
+                  ? 'Attempted'
+                  : 'Saved',
+              summary: userNotes?.intuition || '',
+              pattern_used: userNotes?.pattern_used || '',
+              recognition_clues: userNotes?.pattern_cues || '',
+              key_points: userNotes?.key_points || '',
+              brute_force_approach: userNotes?.brute_force_approach || '',
+              optimised_approach: userNotes?.optimized_approach || '',
+              code: userNotes?.code || '',
+              language: userNotes?.language || 'cpp',
+              time_complexity: userNotes?.time_complexity || '',
+              space_complexity: userNotes?.space_complexity || '',
+              common_mistakes: userNotes?.mistakes || '',
+              edge_cases: userNotes?.edge_cases || '',
+              additional_notes: '',
+              personal_notes: userNotes?.personal_notes || '',
+              confidence_rating: userNotes?.confidence_rating || 3,
+              is_bookmarked: false,
+              is_learned: userProgress?.status === 'solved',
+              tags: userNotes?.tags || [],
+              topic_id: currProb.topic_id,
+              review_schedule: userSched || null,
+            });
+          } else if (problemId === '3sum') {
+            // Reference problem if visited directly
+            setProblem({
+              id: null,
+              title: '3Sum',
+              problem_number: '15',
+              external_url: 'https://leetcode.com/problems/3sum/',
+              difficulty: 'Medium',
+              status: 'Solved',
+              summary:
+                'Given an integer array nums, return all the triplets [nums[i], nums[j], nums[k]] such that i != j, i != k, j != k, and nums[i] + nums[j] + nums[k] == 0.',
+              pattern_used: 'Two Pointers',
+              recognition_clues: 'Used when we need to find a pair/triplet in a sorted array.',
+              key_points:
+                '• Sort the array first.\n• Fix one element and use two pointers for the rest.\n• Skip duplicates to avoid repeated triplets.',
+              brute_force_approach:
+                'Three nested loops checking all possible triplets O(n³).',
+              optimised_approach:
+                'Sort array in O(n log n). Loop through index i, and maintain left = i+1, right = n-1. Move pointers based on sum and skip duplicates.',
+              code: '',
+              language: 'cpp',
+              time_complexity: 'O(n²)',
+              space_complexity: 'O(1)',
+              common_mistakes: 'Not skipping duplicates, resulting in repeated triplets.',
+              edge_cases: 'Array length < 3, all zeroes, no valid triplet.',
+              personal_notes: '',
+              confidence_rating: 4,
+              is_bookmarked: false,
+              is_learned: false,
+              tags: ['array', 'two-pointers', 'sorting'],
+              topic_id: tData?.[0]?.id || null,
+            });
+          }
         }
 
         setTopics(tData || []);
@@ -153,18 +210,18 @@ export default function ProblemDetailPage({ params }) {
       <div className="flex flex-col items-center justify-center h-full p-8 text-center space-y-3">
         <h2 className="text-lg font-bold text-foreground">Problem Note Not Found</h2>
         <p className="text-xs text-muted max-w-sm">
-          No problem matching &quot;{problemId}&quot; exists in your private workspace.
+          No problem matching &quot;{problemId}&quot; exists in your workspace.
         </p>
         <div className="flex items-center gap-2 pt-2">
           <button
             onClick={() => router.push('/problems/new')}
-            className="px-3.5 py-1.5 rounded-xl bg-accent text-accent-text text-xs font-bold"
+            className="px-3.5 py-1.5 rounded-xl bg-accent text-accent-text text-xs font-bold cursor-pointer"
           >
-            Create New Note
+            Create Blank Note
           </button>
           <button
             onClick={() => router.push('/problems')}
-            className="px-3.5 py-1.5 rounded-xl border border-border bg-panel text-xs text-foreground"
+            className="px-3.5 py-1.5 rounded-xl border border-border bg-panel text-xs text-foreground cursor-pointer"
           >
             All Problems
           </button>

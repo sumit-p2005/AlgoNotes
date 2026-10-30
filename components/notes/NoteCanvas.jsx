@@ -12,9 +12,11 @@ import {
   Undo2,
   Redo2,
   Plus,
+  List,
 } from 'lucide-react';
 import { BlockItem } from './BlockItem';
 import { BlockInsertionToolbar, BLOCK_TYPES } from './BlockInsertionToolbar';
+import { TableOfContents } from './TableOfContents';
 import { calculateBlockNumbers } from '@/lib/utils/noteNumbering';
 import { cn } from '@/lib/utils/cn';
 
@@ -65,6 +67,7 @@ export function NoteCanvas({
   const blocks = useMemo(() => rawBlocks || [], [rawBlocks]);
   const [activeBlockId, setActiveBlockId] = useState(null);
   const [focusedBlockId, setFocusedBlockId] = useState(null);
+  const [isMobileTocOpen, setIsMobileTocOpen] = useState(false);
 
   // Dynamic automatic hierarchical numbering (H1: 1, 2, 3... H2: 1.1, 1.2, 2.1...)
   const blockNumbers = useMemo(() => calculateBlockNumbers(blocks), [blocks]);
@@ -306,6 +309,17 @@ export function NoteCanvas({
             )}
           </div>
 
+          {/* Table of Contents Toggle (Mobile / Tablet) */}
+          <button
+            type="button"
+            onClick={() => setIsMobileTocOpen(!isMobileTocOpen)}
+            className="lg:hidden p-1.5 rounded-lg border border-border text-muted hover:text-amber-400 hover:bg-elevated transition-colors cursor-pointer"
+            title="Table of Contents"
+            aria-label="Table of Contents"
+          >
+            <List className="w-3.5 h-3.5" />
+          </button>
+
           {/* Delete Note */}
           <button
             type="button"
@@ -319,73 +333,101 @@ export function NoteCanvas({
         </div>
       </div>
 
-      {/* Main Document Body */}
-      <div className="flex-1 overflow-y-auto px-4 sm:px-12 lg:px-20 py-6 max-w-4xl mx-auto w-full">
-        {/* Note Title Input */}
-        <div className="mb-1">
-          <input
-            ref={titleInputRef}
-            type="text"
-            value={note.title || ''}
-            onChange={(e) => onUpdateNoteMeta({ title: e.target.value })}
-            placeholder="Untitled Note"
-            aria-label="Note Title"
-            className="w-full bg-transparent font-extrabold text-3xl sm:text-4xl text-foreground placeholder:text-muted/30 focus:outline-none tracking-tight leading-tight"
-          />
+      {/* Main Workspace with Document Body & Table of Contents */}
+      <div className="flex-1 flex overflow-hidden relative">
+        {/* Main Document Body */}
+        <div className="flex-1 overflow-y-auto px-4 sm:px-12 lg:px-16 py-6 max-w-4xl mx-auto w-full">
+          {/* Note Title Input */}
+          <div className="mb-1">
+            <input
+              ref={titleInputRef}
+              type="text"
+              value={note.title || ''}
+              onChange={(e) => onUpdateNoteMeta({ title: e.target.value })}
+              placeholder="Untitled Note"
+              aria-label="Note Title"
+              className="w-full bg-transparent font-extrabold text-3xl sm:text-4xl text-foreground placeholder:text-muted/30 focus:outline-none tracking-tight leading-tight"
+            />
+          </div>
+
+          {/* Optional Subtitle / Description */}
+          <div className="mb-3">
+            <input
+              type="text"
+              value={note.description || ''}
+              onChange={(e) => onUpdateNoteMeta({ description: e.target.value })}
+              placeholder="Add an optional brief description, tags, or topic context..."
+              aria-label="Note Description"
+              className="w-full bg-transparent text-xs sm:text-sm text-muted placeholder:text-muted/30 focus:outline-none"
+            />
+          </div>
+
+          <div className="h-[1px] w-full bg-border/40 mb-2" />
+
+          {/* Blocks Container - Compact Document Layout without card containers */}
+          <div className="flex flex-col space-y-0 min-h-[200px]">
+            {blocks.length === 0 ? (
+              <div className="py-8 px-4 text-center space-y-2 select-none">
+                <p className="text-xs text-muted/70">
+                  This document is blank. Start by clicking any block below.
+                </p>
+              </div>
+            ) : (
+              blocks.map((block, idx) => (
+                <BlockItem
+                  key={block.id || `b-${idx}`}
+                  block={block}
+                  index={idx}
+                  totalBlocks={blocks.length}
+                  blockNumber={blockNumbers.get(block.id)}
+                  isFocused={block.id === focusedBlockId}
+                  onBlockFocus={(id) => setActiveBlockId(id)}
+                  onEnterNewBlock={handleEnterNewBlock}
+                  onDeleteEmptyBlock={handleDeleteEmptyBlock}
+                  onUpdateContent={handleUpdateContent}
+                  onDeleteBlock={handleDeleteBlock}
+                  onDuplicateBlock={handleDuplicateBlock}
+                  onMoveBlock={handleMoveBlock}
+                  onInsertBelow={handleInsertBelow}
+                />
+              ))
+            )}
+          </div>
+
+          {/* Docked Compact Bottom Insertion Toolbar */}
+          <div className="sticky bottom-4 pt-3 pb-2">
+            <BlockInsertionToolbar
+              onInsertBlock={handleAppendBlock}
+              activeBlockType={activeBlock?.block_type}
+              isDocked
+            />
+          </div>
         </div>
 
-        {/* Optional Subtitle / Description */}
-        <div className="mb-3">
-          <input
-            type="text"
-            value={note.description || ''}
-            onChange={(e) => onUpdateNoteMeta({ description: e.target.value })}
-            placeholder="Add an optional brief description, tags, or topic context..."
-            aria-label="Note Description"
-            className="w-full bg-transparent text-xs sm:text-sm text-muted placeholder:text-muted/30 focus:outline-none"
-          />
-        </div>
+        {/* Collapsible Table of Contents - Right side on desktop */}
+        <TableOfContents blocks={blocks} />
 
-        <div className="h-[1px] w-full bg-border/40 mb-2" />
-
-        {/* Blocks Container - Compact Document Layout without card containers */}
-        <div className="flex flex-col space-y-0 min-h-[200px]">
-          {blocks.length === 0 ? (
-            <div className="py-8 px-4 text-center space-y-2 select-none">
-              <p className="text-xs text-muted/70">
-                This document is blank. Start by clicking any block below.
-              </p>
-            </div>
-          ) : (
-            blocks.map((block, idx) => (
-              <BlockItem
-                key={block.id || `b-${idx}`}
-                block={block}
-                index={idx}
-                totalBlocks={blocks.length}
-                blockNumber={blockNumbers.get(block.id)}
-                isFocused={block.id === focusedBlockId}
-                onBlockFocus={(id) => setActiveBlockId(id)}
-                onEnterNewBlock={handleEnterNewBlock}
-                onDeleteEmptyBlock={handleDeleteEmptyBlock}
-                onUpdateContent={handleUpdateContent}
-                onDeleteBlock={handleDeleteBlock}
-                onDuplicateBlock={handleDuplicateBlock}
-                onMoveBlock={handleMoveBlock}
-                onInsertBelow={handleInsertBelow}
+        {/* Mobile TOC Drawer / Modal */}
+        {isMobileTocOpen && (
+          <div className="lg:hidden fixed inset-0 z-50 bg-black/70 backdrop-blur-xs flex items-center justify-center p-4">
+            <div className="w-full max-w-sm bg-panel border border-border rounded-2xl overflow-hidden shadow-2xl flex flex-col max-h-[80vh]">
+              <TableOfContents
+                blocks={blocks}
+                isMobileModal
+                onCloseMobile={() => setIsMobileTocOpen(false)}
               />
-            ))
-          )}
-        </div>
-
-        {/* Docked Compact Bottom Insertion Toolbar */}
-        <div className="sticky bottom-4 pt-3 pb-2">
-          <BlockInsertionToolbar
-            onInsertBlock={handleAppendBlock}
-            activeBlockType={activeBlock?.block_type}
-            isDocked
-          />
-        </div>
+              <div className="p-3 border-t border-border flex justify-end">
+                <button
+                  type="button"
+                  onClick={() => setIsMobileTocOpen(false)}
+                  className="px-3 py-1.5 rounded-lg bg-elevated text-xs font-semibold text-foreground hover:bg-elevated/80 transition-colors"
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </main>
   );

@@ -98,9 +98,10 @@ export function BlockItem({
 
   return (
     <div
+      id={block.id ? `block-${block.id}` : undefined}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
-      className="relative group px-1 sm:px-2 py-0.5 rounded-lg transition-colors hover:bg-panel/20"
+      className="relative group px-1 sm:px-2 py-0.5 rounded-lg transition-colors hover:bg-panel/20 scroll-mt-20"
     >
       {/* Top/Left Floating Action Handle */}
       <div

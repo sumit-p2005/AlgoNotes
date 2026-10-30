@@ -45,99 +45,57 @@ export function ProblemNotebook({
 }) {
   const router = useRouter();
 
-  // Problem State: Empty when isNew is true, otherwise uses initialProblem or sample
+  // Problem State: Empty when isNew is true or when initialProblem is absent
   const [formData, setFormData] = useState(() => {
     if (initialProblem) {
       return {
         ...initialProblem,
         code: initialProblem.code ?? '',
         language: initialProblem.language || 'cpp',
+        pattern_used: initialProblem.pattern_used || initialProblem.pattern || '',
+        summary: initialProblem.summary || '',
+        recognition_clues: initialProblem.recognition_clues || '',
+        key_points: initialProblem.key_points || '',
+        personal_notes: initialProblem.personal_notes || '',
+        brute_force_approach: initialProblem.brute_force_approach || '',
+        optimised_approach: initialProblem.optimised_approach || '',
+        time_complexity: initialProblem.time_complexity || '',
+        space_complexity: initialProblem.space_complexity || '',
+        common_mistakes: initialProblem.common_mistakes || '',
+        edge_cases: initialProblem.edge_cases || '',
+        additional_notes: initialProblem.additional_notes || '',
+        confidence_rating: initialProblem.confidence_rating || 3,
+        is_bookmarked: initialProblem.is_bookmarked || false,
+        is_learned: initialProblem.is_learned || false,
+        tags: initialProblem.tags || [],
+        topic_id: initialProblem.topic_id || topics[0]?.id || null,
       };
     }
-    if (isNew) {
-      return {
-        title: '',
-        problem_number: '',
-        external_url: '',
-        difficulty: 'Medium',
-        status: 'Attempted',
-        summary: '',
-        recognition_clues: '',
-        key_points: '',
-        brute_force_approach: '',
-        optimised_approach: '',
-        code: '',
-        language: 'cpp',
-        time_complexity: 'O(N)',
-        space_complexity: 'O(1)',
-        common_mistakes: '',
-        edge_cases: '',
-        additional_notes: '',
-        personal_notes: '',
-        confidence_rating: 3,
-        is_bookmarked: false,
-        is_learned: false,
-        tags: [],
-        topic_id: topics[0]?.id || null,
-      };
-    }
-    // Default fallback reference item
+    // Genuinely blank template for new notes — no predefined content
     return {
-      title: '3Sum',
-      problem_number: '15',
-      external_url: 'https://leetcode.com/problems/3sum/',
+      title: '',
+      problem_number: '',
+      external_url: '',
       difficulty: 'Medium',
-      status: 'Solved',
-      summary:
-        'Given an integer array nums, return all the triplets [nums[i], nums[j], nums[k]] such that i != j, i != k, j != k, and nums[i] + nums[j] + nums[k] == 0.',
-      recognition_clues:
-        'Used when we need to find a pair/triplet in a sorted array.',
-      key_points:
-        '• Sort the array first.\n• Fix one element and use two pointers for the rest.\n• Skip duplicates to avoid repeated triplets.\n• Time Complexity: O(n²)',
-      brute_force_approach:
-        'Three nested loops checking all possible triplets O(n³).',
-      optimised_approach:
-        'Sort the array in O(n log n). Loop through index i, and for each i, maintain two pointers left = i+1 and right = n-1. Move pointers based on sum and skip identical adjacent values.',
-      code: `class Solution {
-    public List<List<Integer>> threeSum(int[] nums) {
-        Arrays.sort(nums);
-        List<List<Integer>> res = new ArrayList<>();
-        int n = nums.length;
-
-        for (int i = 0; i < n - 2; i++) {
-            if (i > 0 && nums[i] == nums[i - 1]) continue;
-            int left = i + 1, right = n - 1;
-
-            while (left < right) {
-                int sum = nums[i] + nums[left] + nums[right];
-                if (sum == 0) {
-                    res.add(Arrays.asList(nums[i], nums[left], nums[right]));
-                    while (left < right && nums[left] == nums[left + 1]) left++;
-                    while (left < right && nums[right] == nums[right - 1]) right--;
-                    left++;
-                    right--;
-                } else if (sum < 0) {
-                    left++;
-                } else {
-                    right--;
-                }
-            }
-        }
-        return res;
-    }
-}`,
-      language: 'java',
-      time_complexity: 'O(n²)',
-      space_complexity: 'O(1) auxiliary',
-      common_mistakes: 'Not skipping duplicates, resulting in repeated triplets.',
-      edge_cases: 'Array length < 3, all zeroes, no valid triplet.',
-      additional_notes:
-        '• Can be extended to k-Sum problem.\n• Important to handle duplicates carefully.\n• Practice variations like 4Sum.\n• Common mistake: not skipping duplicates.',
+      status: 'Attempted',
+      summary: '',
+      pattern_used: '',
+      recognition_clues: '',
+      key_points: '',
+      brute_force_approach: '',
+      optimised_approach: '',
+      code: '',
+      language: 'cpp',
+      time_complexity: '',
+      space_complexity: '',
+      common_mistakes: '',
+      edge_cases: '',
+      additional_notes: '',
       personal_notes: '',
-      confidence_rating: 4,
-      is_bookmarked: true,
-      is_learned: true,
-      tags: ['array', 'two-pointers', 'sorting'],
+      confidence_rating: 3,
+      is_bookmarked: false,
+      is_learned: false,
+      tags: [],
       topic_id: topics[0]?.id || null,
     };
   });
@@ -161,13 +119,55 @@ export function ProblemNotebook({
   const [showTagInput, setShowTagInput] = useState(false);
   const saveTimeoutRef = useRef(null);
 
-  // Autosave existing problem
+  // Autosave existing problem (supports custom notes and curriculum notes)
   const persistProblem = useCallback(
     async (updated) => {
       if (isNew || !updated.id) return;
       setSaveStatus('Saving...');
       try {
         const supabase = createClient();
+        const { data: { user } } = await supabase.auth.getUser();
+
+        if (updated.is_curriculum) {
+          if (user) {
+            // Upsert user curriculum notes
+            await supabase.from('user_curriculum_notes').upsert({
+              user_id: user.id,
+              problem_id: updated.id,
+              code: updated.code || '',
+              language: updated.language || 'cpp',
+              pattern_used: updated.pattern_used || '',
+              pattern_cues: updated.recognition_clues || '',
+              key_points: updated.key_points || '',
+              brute_force_approach: updated.brute_force_approach || '',
+              optimized_approach: updated.optimised_approach || '',
+              intuition: updated.summary || '',
+              time_complexity: updated.time_complexity || '',
+              space_complexity: updated.space_complexity || '',
+              mistakes: updated.common_mistakes || '',
+              edge_cases: updated.edge_cases || '',
+              personal_notes: updated.personal_notes || '',
+              confidence_rating: updated.confidence_rating || 3,
+              tags: updated.tags || [],
+              updated_at: new Date().toISOString(),
+            }, { onConflict: 'user_id,problem_id' });
+
+            // Upsert user curriculum progress if attempted/solved
+            const pStatus = (updated.status || '').toLowerCase();
+            if (pStatus === 'solved' || pStatus === 'attempted') {
+              await supabase.from('user_curriculum_progress').upsert({
+                user_id: user.id,
+                problem_id: updated.id,
+                status: pStatus,
+                last_activity_at: new Date().toISOString(),
+              }, { onConflict: 'user_id,problem_id' });
+            }
+          }
+          setSaveStatus('Saved');
+          return;
+        }
+
+        // Standard custom problem note
         const { error } = await supabase
           .from('problems')
           .update({
@@ -182,9 +182,11 @@ export function ProblemNotebook({
             brute_force_approach: updated.brute_force_approach,
             optimised_approach: updated.optimised_approach,
             code: updated.code,
-            language: updated.language,
+            language: updated.language || 'cpp',
             time_complexity: updated.time_complexity,
             space_complexity: updated.space_complexity,
+            common_mistakes: updated.common_mistakes,
+            edge_cases: updated.edge_cases,
             additional_notes: updated.additional_notes,
             personal_notes: updated.personal_notes,
             tags: updated.tags || [],
@@ -332,9 +334,9 @@ export function ProblemNotebook({
           brute_force_approach: formData.brute_force_approach || '',
           optimised_approach: formData.optimised_approach || '',
           code: formData.code || '',
-          language: formData.language || 'javascript',
-          time_complexity: formData.time_complexity || 'O(N)',
-          space_complexity: formData.space_complexity || 'O(1)',
+          language: formData.language || 'cpp',
+          time_complexity: formData.time_complexity || '',
+          space_complexity: formData.space_complexity || '',
           common_mistakes: formData.common_mistakes || '',
           edge_cases: formData.edge_cases || '',
           additional_notes: formData.additional_notes || '',
@@ -470,7 +472,7 @@ export function ProblemNotebook({
               type="text"
               value={formData.title}
               onChange={(e) => updateField('title', e.target.value)}
-              placeholder="Enter Problem Title (e.g. 3Sum, LRU Cache)..."
+              placeholder="Enter Problem Title..."
               className="text-2xl font-bold tracking-tight text-foreground bg-transparent focus:outline-none w-full placeholder:text-muted"
             />
             {formData.external_url && (
@@ -638,7 +640,7 @@ export function ProblemNotebook({
                     rows={3}
                     value={formData.summary}
                     onChange={(e) => updateField('summary', e.target.value)}
-                    placeholder="Summarize the core problem requirements in your own words..."
+                    placeholder="Summarize the problem in your own words..."
                     className="w-full bg-transparent text-xs sm:text-sm text-foreground/90 leading-relaxed font-sans focus:outline-none resize-y placeholder:text-muted"
                   />
                 </div>
@@ -649,17 +651,47 @@ export function ProblemNotebook({
                     <Target className="w-4 h-4 text-amber-400" />
                     <span>Pattern Used</span>
                   </div>
-                  <div className="flex items-center gap-3 flex-wrap">
-                    <span className="px-3 py-1 rounded-full text-xs font-bold bg-amber-400 text-black">
-                      Two Pointers
-                    </span>
-                    <input
-                      type="text"
-                      value={formData.recognition_clues}
-                      onChange={(e) => updateField('recognition_clues', e.target.value)}
-                      placeholder="Used when we need to find a pair/triplet in a sorted array..."
-                      className="flex-1 bg-transparent text-xs text-muted focus:outline-none placeholder:text-muted"
-                    />
+                  <div className="space-y-2.5">
+                    <div className="relative">
+                      <input
+                        type="text"
+                        list="pattern-options-list"
+                        value={formData.pattern_used || ''}
+                        onChange={(e) => updateField('pattern_used', e.target.value)}
+                        placeholder="Select or enter the pattern used..."
+                        className="w-full bg-elevated/50 border border-border rounded-lg px-3 py-1.5 text-xs text-foreground placeholder:text-muted focus:outline-none focus:ring-1 focus:ring-accent"
+                      />
+                      <datalist id="pattern-options-list">
+                        {(patterns || []).map((p) => (
+                          <option key={p.id} value={p.name} />
+                        ))}
+                        <option value="Two Pointers" />
+                        <option value="Sliding Window" />
+                        <option value="Prefix Sum" />
+                        <option value="Binary Search" />
+                        <option value="Fast & Slow Pointers" />
+                        <option value="Monotonic Stack" />
+                        <option value="BFS & DFS" />
+                        <option value="Dynamic Programming" />
+                        <option value="Greedy" />
+                        <option value="Backtracking" />
+                        <option value="Bit Manipulation" />
+                        <option value="Union Find" />
+                      </datalist>
+                    </div>
+
+                    <div className="space-y-1">
+                      <label className="text-[11px] font-medium text-muted block">
+                        Recognition Clues
+                      </label>
+                      <input
+                        type="text"
+                        value={formData.recognition_clues || ''}
+                        onChange={(e) => updateField('recognition_clues', e.target.value)}
+                        placeholder="What clues helped you recognize this pattern?"
+                        className="w-full bg-transparent border-b border-border/60 py-1 text-xs text-foreground focus:outline-none focus:border-accent placeholder:text-muted"
+                      />
+                    </div>
                   </div>
                 </div>
 
@@ -672,9 +704,9 @@ export function ProblemNotebook({
 
                   <textarea
                     rows={4}
-                    value={formData.key_points}
+                    value={formData.key_points || ''}
                     onChange={(e) => updateField('key_points', e.target.value)}
-                    placeholder="• Sort the array first.&#10;• Fix one element and use two pointers for the rest.&#10;• Skip duplicates to avoid repeated triplets.&#10;• Time Complexity: O(n²)"
+                    placeholder="Add important observations and things to remember..."
                     className="w-full bg-transparent text-xs text-foreground/90 font-sans leading-relaxed focus:outline-none resize-y placeholder:text-muted"
                   />
                 </div>
@@ -690,7 +722,7 @@ export function ProblemNotebook({
                     rows={4}
                     value={formData.personal_notes || ''}
                     onChange={(e) => updateField('personal_notes', e.target.value)}
-                    placeholder="Add your personal notes, insights, or key takeaways..."
+                    placeholder="Write your own understanding, intuition and observations..."
                     className="w-full bg-elevated/50 border border-border rounded-xl p-2.5 text-xs text-foreground placeholder:text-muted focus:outline-none focus:ring-1 focus:ring-accent"
                   />
 
@@ -818,9 +850,10 @@ export function ProblemNotebook({
                   </span>
                   <textarea
                     rows={3}
-                    value={formData.common_mistakes}
+                    value={formData.common_mistakes || ''}
                     onChange={(e) => updateField('common_mistakes', e.target.value)}
-                    className="w-full bg-transparent text-xs text-foreground focus:outline-none resize-y"
+                    placeholder="Add common mistakes or pitfalls to avoid..."
+                    className="w-full bg-transparent text-xs text-foreground focus:outline-none resize-y placeholder:text-muted"
                   />
                 </div>
 
@@ -830,9 +863,10 @@ export function ProblemNotebook({
                   </span>
                   <textarea
                     rows={3}
-                    value={formData.edge_cases}
+                    value={formData.edge_cases || ''}
                     onChange={(e) => updateField('edge_cases', e.target.value)}
-                    className="w-full bg-transparent text-xs text-foreground focus:outline-none resize-y"
+                    placeholder="Add critical edge cases to consider (e.g. empty array, duplicates, overflow)..."
+                    className="w-full bg-transparent text-xs text-foreground focus:outline-none resize-y placeholder:text-muted"
                   />
                 </div>
               </div>
